@@ -1,0 +1,236 @@
+---
+import { getEmDashCollection } from "emdash";
+import Base from "../../layouts/Base.astro";
+import EmptyState from "../../components/EmptyState.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import ContactCTA from "../../components/ContactCTA.astro";
+import { getVisibleContactLinks } from "../../lib/content";
+
+const pageSize = 12;
+const requestedPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const currentPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+const [homeResult, projectResult, contactLinks] = await Promise.all([
+  getEmDashCollection("homepage_content", { limit: 1 }),
+  getEmDashCollection("projects", {
+    limit: pageSize,
+    offset: (currentPage - 1) * pageSize,
+    orderBy: { sort_order: "asc", published_at: "desc" },
+  }),
+  getVisibleContactLinks(),
+]);
+const home = homeResult.entries[0]?.data;
+const projects = projectResult.entries;
+if (homeResult.error) console.error("Unable to load project page settings.");
+if (projectResult.error) console.error("Unable to load public projects.");
+if (currentPage > 1 && projects.length === 0) return Astro.redirect("/projects", 302);
+const categories = [...new Set(projects.map((project) => project.data.category).filter(Boolean))];
+const categoryLabels: Record<string, string> = {
+  website: "Website",
+  mobile_app: "Mobile App",
+  custom_software: "Custom Software",
+  automation_tool: "Automation Tool",
+};
+const description = home?.projects_intro || "Danh sách các dự án đã được công bố bởi Frorlancee Dev.";
+---
+
+<Base title="Dự án" description={description}>
+  <div class="shell projects-page">
+    <header class="page-header">
+      <p class="eyebrow">Portfolio</p>
+      <h1>Sản phẩm số được xây từ bài toán cụ thể.</h1>
+      <p>{description}</p>
+    </header>
+
+    {projects.length > 0 ? (
+      <>
+        <div class="project-toolbar">
+          <div class="project-filters" role="group" aria-label="Lọc dự án theo loại">
+            <button type="button" data-project-filter="all" aria-pressed="true">Tất cả</button>
+            {categories.map((category) => <button type="button" data-project-filter={category} aria-pressed="false">{categoryLabels[category] ?? category}</button>)}
+          </div>
+          <p class="project-count" aria-live="polite"><span data-project-count>{projects.length}</span> dự án trong danh sách này</p>
+        </div>
+
+        <div class="projects-grid" data-project-grid>
+          {projects.map((project) => (
+            <div data-project-card>
+              <ProjectCard
+                title={project.data.title}
+                summary={project.data.summary}
+                href={`/projects/${project.id}`}
+                category={project.data.category}
+                coverImage={project.data.cover_image}
+                featured={project.data.featured}
+              />
+            </div>
+          ))}
+        </div>
+
+        {(currentPage > 1 || projectResult.hasMore) && (
+          <nav class="pagination" aria-label="Điều hướng danh sách dự án">
+            {currentPage > 1 && <a href={currentPage === 2 ? "/projects" : `/projects?page=${currentPage - 1}`}>← Trang trước</a>}
+            <span>Trang {currentPage}</span>
+            {projectResult.hasMore && <a href={`/projects?page=${currentPage + 1}`}>Trang tiếp →</a>}
+          </nav>
+        )}
+      </>
+    ) : (
+      <EmptyState
+        title="Portfolio đang được cập nhật"
+        description="Dự án sẽ xuất hiện ở đây sau khi được thêm vào CMS và xuất bản. Các dự án chưa được công bố sẽ không hiển thị trên website."
+        actionLabel="Trao đổi một ý tưởng mới"
+        actionHref="/contact"
+      />
+    )}
+  </div>
+  {home?.contact_cta_title && <section class="projects-contact"><ContactCTA heading={home.contact_cta_title} description={home.contact_cta_description} links={contactLinks} /></section>}
+</Base>
+
+<script>
+  const projectGrid = document.querySelector<HTMLElement>("[data-project-grid]");
+  const filterButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-project-filter]"));
+  const projectCount = document.querySelector<HTMLElement>("[data-project-count]");
+
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const selected = button.dataset.projectFilter || "all";
+      let visibleCount = 0;
+
+      filterButtons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      projectGrid?.querySelectorAll<HTMLElement>("[data-project-card]").forEach((card) => {
+        const projectCategory = card.querySelector<HTMLElement>("[data-project-category]")?.dataset.projectCategory;
+        const visible = selected === "all" || projectCategory === selected;
+        card.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      if (projectCount) projectCount.textContent = String(visibleCount);
+    });
+  });
+</script>
+
+<style>
+  .projects-page {
+    padding-block: clamp(3.75rem, 7vw, 6rem) clamp(4rem, 8vw, 7rem);
+  }
+
+  .page-header {
+    max-width: 53rem;
+    margin-bottom: 3rem;
+  }
+
+  .page-header h1 {
+    max-width: 15ch;
+    color: var(--color-navy);
+    font-size: clamp(2.75rem, 6vw, 5rem);
+    line-height: 1.03;
+    letter-spacing: -0.06em;
+  }
+
+  .page-header > p:last-child {
+    max-width: 45rem;
+    margin-top: 1.2rem;
+    color: var(--color-muted);
+    font-size: 1.08rem;
+    line-height: 1.75;
+  }
+
+  .project-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .project-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .project-filters button {
+    min-height: 2.65rem;
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 99px;
+    color: var(--color-muted);
+    background: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 550;
+    cursor: pointer;
+    transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+  }
+
+  .project-filters button[aria-pressed="true"] {
+    border-color: var(--color-navy);
+    color: #ffffff;
+    background: var(--color-navy);
+  }
+
+  .project-filters button:hover:not([aria-pressed="true"]) {
+    border-color: rgb(0 168 245 / 50%);
+    color: var(--color-navy);
+  }
+
+  .project-count {
+    flex: 0 0 auto;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.2rem, 2.7vw, 2.1rem);
+  }
+
+  .projects-grid > [hidden] {
+    display: none;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.2rem;
+    margin-top: 3rem;
+    color: var(--color-muted);
+    font-size: 0.88rem;
+  }
+
+  .pagination a {
+    color: var(--color-navy);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .pagination a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .projects-contact > .contact-cta {
+    border-top: 1px solid rgb(255 255 255 / 12%);
+  }
+
+  @media (max-width: 900px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 620px) {
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .project-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .page-header h1 {
+      font-size: clamp(2.5rem, 12vw, 3.8rem);
+    }
+  }
+</style>

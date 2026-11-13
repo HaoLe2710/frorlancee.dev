@@ -1,0 +1,727 @@
+---
+import Base from "../layouts/Base.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import ContactCTA from "../components/ContactCTA.astro";
+import EmptyState from "../components/EmptyState.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import ServiceCard from "../components/ServiceCard.astro";
+import { getVisibleContactLinks, safeHref } from "../lib/content";
+import { getEmDashCollection, getEmDashEntry } from "emdash";
+
+const [homeResult, serviceResult, projectResult, aboutResult, postResult, contactLinks] = await Promise.all([
+  getEmDashCollection("homepage_content", { limit: 1 }),
+  getEmDashCollection("services", { limit: 50, orderBy: { sort_order: "asc" } }),
+  getEmDashCollection("projects", { limit: 40, orderBy: { sort_order: "asc", published_at: "desc" } }),
+  getEmDashEntry("pages", "about"),
+  getEmDashCollection("posts", { limit: 3, orderBy: { published_at: "desc" } }),
+  getVisibleContactLinks(),
+]);
+
+const home = homeResult.entries[0]?.data;
+if (!home) return new Response("Homepage content is not configured.", { status: 503 });
+const services = serviceResult.entries.filter((service) => service.data.visible !== false).slice(0, 12);
+const projects = projectResult.entries.filter((project) => project.data.featured === true).slice(0, 4);
+const posts = postResult.entries;
+const about = aboutResult.entry;
+if (homeResult.error) console.error("Unable to load homepage content.");
+if (serviceResult.error) console.error("Unable to load public services.");
+if (projectResult.error) console.error("Unable to load featured projects.");
+if (postResult.error) console.error("Unable to load latest articles.");
+
+const primaryHref = safeHref(home.primary_cta_url) || "/contact";
+const secondaryHref = safeHref(home.secondary_cta_url) || "/projects";
+const seoCanonical = home.canonical_base_url ? safeHref(home.canonical_base_url) : undefined;
+let canonical: string | undefined;
+if (seoCanonical) {
+  try { canonical = new URL("/", seoCanonical).href; } catch { canonical = undefined; }
+}
+
+const title = home.default_seo_title || "Frorlancee Dev";
+---
+
+<Base title={title} description={home.default_seo_description} canonical={canonical}>
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">{home.hero_eyebrow}</p>
+        <h1>{home.hero_title} <span>{home.hero_highlight}</span></h1>
+        <p class="hero-description">{home.hero_description}</p>
+        <div class="hero-actions">
+          <a href={primaryHref} class="button button--primary inline-flex items-center gap-2">{home.primary_cta_label}<span aria-hidden="true">→</span></a>
+          <a href={secondaryHref} class="button button--secondary inline-flex items-center gap-2">{home.secondary_cta_label}<span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="hero-footnote"><span aria-hidden="true"></span> Giải pháp được xác định theo nhu cầu của từng dự án</p>
+      </div>
+
+      <div class="hero-map" role="img" aria-label="Sơ đồ từ bài toán thực tế đến giải pháp phần mềm phù hợp">
+        <div class="hero-map__topline">
+          <span>FRORLANCEE / PRODUCT FLOW</span>
+          <span>01 — 02</span>
+        </div>
+        <div class="flow-board">
+          <div class="flow-node flow-node--start">
+            <span class="flow-node__label">Điểm bắt đầu</span>
+            <strong>Bài toán<br />thực tế</strong>
+            <span class="flow-node__caption">Mục tiêu · người dùng · quy trình</span>
+          </div>
+          <div class="flow-connector" aria-hidden="true"><span></span><i></i></div>
+          <div class="flow-node flow-node--result">
+            <span class="flow-node__label">Hướng triển khai</span>
+            <strong>Giải pháp<br />phù hợp</strong>
+            <ul>
+              {services.slice(0, 3).map((service) => <li><span aria-hidden="true"></span>{service.data.title}</li>)}
+              {services.length === 0 && <li><span aria-hidden="true"></span>Sản phẩm số</li>}
+            </ul>
+          </div>
+          <div class="flow-orbit flow-orbit--one" aria-hidden="true"></div>
+          <div class="flow-orbit flow-orbit--two" aria-hidden="true"></div>
+        </div>
+        <div class="hero-map__footer">
+          <span class="map-dot" aria-hidden="true"></span>
+          <span>Thiết kế theo mục tiêu sử dụng</span>
+          <span class="hero-map__code">FD / 2026</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {home.show_services !== false && (
+    <section class="section-pad section-pad--soft" aria-labelledby="services-heading">
+      <div class="shell">
+        <SectionHeading eyebrow="Dịch vụ" title={home.services_title} description={home.services_intro ?? undefined} />
+        {services.length > 0 ? (
+          <div class="services-grid">
+            {services.map((service) => (
+              <ServiceCard
+                title={service.data.title}
+                summary={service.data.summary}
+                icon={service.data.icon_identifier}
+                ctaLabel={service.data.cta_label}
+                ctaUrl={service.data.cta_url}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Dịch vụ đang được cập nhật" description="Các dịch vụ công khai sẽ hiển thị sau khi được thêm và xuất bản trong CMS." actionLabel="Trao đổi dự án" actionHref="/contact" />
+        )}
+        <a class="section-end-link" href="/services">Xem toàn bộ dịch vụ<span aria-hidden="true"> →</span></a>
+      </div>
+    </section>
+  )}
+
+  {home.show_projects !== false && (
+    <section class="section-pad" aria-labelledby="featured-projects-heading">
+      <div class="shell">
+        <div class="section-heading-row">
+          <SectionHeading eyebrow="Portfolio" title={home.projects_title} description={home.projects_intro ?? undefined} />
+          {projects.length > 0 && <a class="text-link section-heading-row__link" href="/projects">Xem tất cả dự án<span aria-hidden="true"> →</span></a>}
+        </div>
+        {projects.length > 0 ? (
+          <div class="projects-grid">
+            {projects.map((project) => (
+              <ProjectCard
+                title={project.data.title}
+                summary={project.data.summary}
+                href={`/projects/${project.id}`}
+                category={project.data.category}
+                coverImage={project.data.cover_image}
+                featured={project.data.featured}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Portfolio đang được cập nhật" description="Dự án sẽ xuất hiện ở đây sau khi được thêm vào CMS và xuất bản. Frorlancee Dev không dùng dự án mẫu làm thành tích thực tế." actionLabel="Trao đổi một ý tưởng mới" actionHref="/contact" />
+        )}
+      </div>
+    </section>
+  )}
+
+  {home.show_about !== false && (
+    <section class="section-pad section-pad--soft" aria-labelledby="about-heading">
+      <div class="shell about-split">
+        <div class="about-copy">
+          <p class="eyebrow">Về Frorlancee Dev</p>
+          <h2 id="about-heading">{home.about_title}</h2>
+          <p>{about?.data.summary || "Frorlancee Dev phát triển Website, Mobile App, phần mềm quản lý và công cụ tự động hóa theo nhu cầu thực tế."}</p>
+          <a class="text-link" href="/about">Tìm hiểu cách làm việc<span aria-hidden="true"> →</span></a>
+        </div>
+        <div class="approach-grid">
+          {(about?.data.approach_points ?? []).map((point, index) => (
+            <article class="approach-item">
+              <span class="approach-item__marker" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+              <h3>{point.title}</h3>
+              <p>{point.detail}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {home.show_process !== false && (
+    <section class="section-pad" aria-labelledby="process-heading">
+      <div class="shell">
+        <SectionHeading eyebrow="Quy trình" title={home.process_title} description={home.process_intro ?? undefined} />
+        <ol class="process-grid">
+          {(home.process_steps ?? []).map((step, index) => (
+            <li class="process-step">
+              <span class="process-step__number">{String(index + 1).padStart(2, "0")}</span>
+              <h3>{step.title}</h3>
+              <p>{step.detail}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )}
+
+  {home.show_articles !== false && (
+    <section class="section-pad section-pad--soft" aria-labelledby="articles-heading">
+      <div class="shell">
+        <div class="section-heading-row">
+          <SectionHeading eyebrow="Bài viết" title={home.articles_title} description={home.articles_intro ?? undefined} />
+          {posts.length > 0 && <a class="text-link section-heading-row__link" href="/blog">Xem tất cả bài viết<span aria-hidden="true"> →</span></a>}
+        </div>
+        {posts.length > 0 ? (
+          <div class="articles-grid">
+            {posts.map((post) => (
+              <ArticleCard
+                title={post.data.title}
+                excerpt={post.data.excerpt}
+                href={`/blog/${post.id}`}
+                publishedAt={post.data.publishedAt}
+                coverImage={post.data.cover_image}
+                category={post.data.terms?.category?.[0]?.label}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState title="Bài viết sẽ xuất hiện tại đây" description="Khi có nội dung được xuất bản, ba bài viết mới nhất sẽ tự động được hiển thị." actionLabel="Xem trang bài viết" actionHref="/blog" />
+        )}
+      </div>
+    </section>
+  )}
+
+  {home.show_contact_cta !== false && (
+    <ContactCTA heading={home.contact_cta_title} description={home.contact_cta_description} links={contactLinks} />
+  )}
+</Base>
+
+<style>
+  .hero {
+    position: relative;
+    padding-block: clamp(4.5rem, 9vw, 8rem) clamp(4rem, 7vw, 6.5rem);
+    background: #ffffff;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.93fr) minmax(25rem, 1.07fr);
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5.5rem);
+  }
+
+  .hero-copy h1 {
+    max-width: 12ch;
+    color: var(--color-navy);
+    font-size: clamp(3.4rem, 6.8vw, 6.25rem);
+    font-weight: 700;
+    line-height: 1.01;
+    letter-spacing: -0.065em;
+  }
+
+  .hero-copy h1 span {
+    display: block;
+    color: #007fc0;
+  }
+
+  .hero-description {
+    max-width: 42rem;
+    margin-top: 1.45rem;
+    color: var(--color-muted);
+    font-size: clamp(1.05rem, 1.55vw, 1.2rem);
+    line-height: 1.75;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+
+  .hero-footnote {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 1.45rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+  }
+
+  .hero-footnote span,
+  .map-dot {
+    width: 0.48rem;
+    height: 0.48rem;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--color-blue);
+    box-shadow: 0 0 0 0.25rem rgb(0 168 245 / 12%);
+  }
+
+  .hero-map {
+    position: relative;
+    min-height: 25rem;
+    padding: 1.3rem;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 1.4rem;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgb(11 30 53 / 7%);
+  }
+
+  .hero-map::before {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgb(11 30 53 / 3%) 1px, transparent 1px), linear-gradient(90deg, rgb(11 30 53 / 3%) 1px, transparent 1px);
+    background-size: 28px 28px;
+    content: "";
+    mask-image: linear-gradient(to bottom right, black, transparent 76%);
+    pointer-events: none;
+  }
+
+  .hero-map__topline,
+  .hero-map__footer {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--color-muted);
+    font-size: 0.67rem;
+    font-weight: 650;
+    letter-spacing: 0.11em;
+  }
+
+  .flow-board {
+    position: relative;
+    display: grid;
+    min-height: 19rem;
+    grid-template-columns: 1fr 4.5rem 1fr;
+    align-items: center;
+    margin-block: 1.2rem;
+  }
+
+  .flow-node {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: 1.35rem;
+    border: 1px solid var(--color-border);
+    border-radius: 1.05rem;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgb(11 30 53 / 6%);
+  }
+
+  .flow-node--start {
+    transform: translateY(-1.7rem);
+  }
+
+  .flow-node--result {
+    border-color: rgb(0 168 245 / 35%);
+    transform: translateY(1.45rem);
+  }
+
+  .flow-node__label {
+    color: #007fc0;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .flow-node strong {
+    margin-top: 0.8rem;
+    color: var(--color-navy);
+    font-size: clamp(1.15rem, 2.2vw, 1.55rem);
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+  }
+
+  .flow-node__caption {
+    margin-top: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    line-height: 1.5;
+  }
+
+  .flow-node ul {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .flow-node li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.73rem;
+  }
+
+  .flow-node li span {
+    width: 0.4rem;
+    height: 0.4rem;
+    border: 1px solid var(--color-blue);
+    border-radius: 0.12rem;
+    background: rgb(0 168 245 / 13%);
+  }
+
+  .flow-connector {
+    position: relative;
+    z-index: 1;
+    height: 1px;
+    background: rgb(0 168 245 / 55%);
+  }
+
+  .flow-connector span,
+  .flow-connector i {
+    position: absolute;
+    top: 50%;
+    width: 0.55rem;
+    height: 0.55rem;
+    border: 1px solid var(--color-blue);
+    border-radius: 50%;
+    background: white;
+    transform: translateY(-50%);
+  }
+
+  .flow-connector span { left: 0; }
+  .flow-connector i { right: 0; }
+
+  .flow-orbit {
+    position: absolute;
+    z-index: 0;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid rgb(0 168 245 / 35%);
+    border-radius: 50%;
+    background: rgb(0 168 245 / 6%);
+  }
+
+  .flow-orbit--one { top: 0.4rem; right: 17%; }
+  .flow-orbit--two { bottom: 0.3rem; left: 18%; width: 1.2rem; height: 1.2rem; }
+
+  .hero-map__footer {
+    justify-content: flex-start;
+    gap: 0.7rem;
+    letter-spacing: 0;
+  }
+
+  .hero-map__code {
+    margin-left: auto;
+    letter-spacing: 0.09em;
+  }
+
+  .section-heading-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .section-heading-row__link {
+    flex: 0 0 auto;
+    margin-bottom: 3.5rem;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .projects-grid,
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.2rem, 2.7vw, 2.1rem);
+  }
+
+  .section-end-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 2rem;
+    color: var(--color-navy);
+    font-size: 0.9rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .section-end-link:hover {
+    color: #007fc0;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .about-split {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: clamp(2rem, 6vw, 6rem);
+  }
+
+  .about-copy h2 {
+    max-width: 13ch;
+    font-size: clamp(2.25rem, 4.5vw, 4rem);
+    line-height: 1.07;
+    letter-spacing: -0.055em;
+  }
+
+  .about-copy > p:not(.eyebrow) {
+    max-width: 45ch;
+    margin-top: 1.1rem;
+    color: var(--color-muted);
+    line-height: 1.75;
+  }
+
+  .about-copy .text-link {
+    display: inline-block;
+    margin-top: 1.2rem;
+  }
+
+  .approach-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem 2rem;
+    padding-top: 0.4rem;
+  }
+
+  .approach-item {
+    padding-top: 1rem;
+    border-top: 1px solid rgb(11 30 53 / 18%);
+  }
+
+  .approach-item__marker {
+    color: #007fc0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  .approach-item h3 {
+    margin-top: 0.8rem;
+    font-size: 1.12rem;
+    letter-spacing: -0.025em;
+  }
+
+  .approach-item p {
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.92rem;
+    line-height: 1.65;
+  }
+
+  .process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    counter-reset: process;
+    list-style: none;
+  }
+
+  .process-step {
+    position: relative;
+    min-height: 11rem;
+    padding: 1.35rem 1.35rem 1rem 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .process-step:not(:last-child)::after {
+    position: absolute;
+    top: -0.25rem;
+    right: 1.3rem;
+    width: 0.42rem;
+    height: 0.42rem;
+    border: 1px solid var(--color-blue);
+    border-radius: 50%;
+    background: white;
+    content: "";
+  }
+
+  .process-step__number {
+    color: #007fc0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .process-step h3 {
+    max-width: 18ch;
+    margin-top: 1rem;
+    font-size: 1.08rem;
+    letter-spacing: -0.025em;
+  }
+
+  .process-step p {
+    max-width: 29ch;
+    margin-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.87rem;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 1100px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
+      gap: 2.3rem;
+    }
+
+    .services-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .projects-grid,
+    .articles-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 780px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 2.8rem;
+    }
+
+    .hero-copy h1 {
+      max-width: 11ch;
+      font-size: clamp(3.35rem, 11vw, 5.4rem);
+    }
+
+    .hero-map {
+      min-height: 23rem;
+    }
+
+    .about-split {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .about-copy h2 {
+      max-width: 16ch;
+    }
+
+    .process-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.2rem 1rem;
+    }
+
+    .process-step:nth-child(2)::after {
+      display: none;
+    }
+  }
+
+  @media (max-width: 540px) {
+    .hero {
+      padding-top: 3.8rem;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(3rem, 14vw, 4rem);
+    }
+
+    .hero-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .hero-actions .button {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .hero-map {
+      min-height: 21rem;
+      padding: 1rem;
+      border-radius: 1rem;
+    }
+
+    .flow-board {
+      min-height: 17rem;
+      grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr);
+    }
+
+    .flow-node {
+      padding: 0.9rem;
+      border-radius: 0.8rem;
+    }
+
+    .flow-node strong {
+      font-size: 1.15rem;
+    }
+
+    .flow-node__caption,
+    .flow-node li {
+      font-size: 0.66rem;
+    }
+
+    .flow-node--start {
+      transform: translateY(-1.2rem);
+    }
+
+    .flow-node--result {
+      transform: translateY(1.1rem);
+    }
+
+    .section-heading-row {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .section-heading-row__link {
+      margin: -1.4rem 0 2rem;
+    }
+
+    .services-grid,
+    .projects-grid,
+    .articles-grid,
+    .approach-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .approach-grid {
+      gap: 1.25rem;
+    }
+
+    .process-grid {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .process-step {
+      min-height: 0;
+      padding: 1rem 0 1.5rem;
+    }
+
+    .process-step::after {
+      display: none;
+    }
+
+    .process-step h3 {
+      margin-top: 0.6rem;
+    }
+
+    .section-pad {
+      padding-block: 3.75rem;
+    }
+  }
+</style>

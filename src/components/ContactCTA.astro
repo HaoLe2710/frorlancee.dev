@@ -1,0 +1,96 @@
+---
+import { safeHref, isExternalHref, type PublicContactLink } from "../lib/content";
+
+interface Props {
+  heading: string;
+  description: string;
+  links: PublicContactLink[];
+}
+
+const { heading, description, links } = Astro.props;
+const messenger = links.find((link) => link.type === "messenger");
+const email = links.find((link) => link.type === "email");
+const primary = messenger ?? email;
+const contactHref = safeHref("/contact") ?? "/contact";
+---
+
+<section class="contact-cta" aria-labelledby="contact-cta-heading">
+  <div class="contact-cta__inner">
+    <div class="contact-cta__copy">
+      <p class="eyebrow eyebrow--light">Frorlancee Dev</p>
+      <h2 id="contact-cta-heading">{heading}</h2>
+      <p>{description}</p>
+    </div>
+    <div class="contact-cta__actions">
+      {primary ? (
+        <a class="button button--light" href={primary.href} target={isExternalHref(primary.href) ? "_blank" : undefined} rel={isExternalHref(primary.href) ? "noopener noreferrer" : undefined}>
+          {primary.type === "messenger" ? "Liên hệ qua Messenger" : "Gửi Email"}<span aria-hidden="true"> ↗</span>
+        </a>
+      ) : (
+        <a class="button button--light" href={contactHref}>Xem cách liên hệ<span aria-hidden="true"> →</span></a>
+      )}
+      {email && primary?.type !== "email" && <a class="contact-cta__secondary" href={email.href}>Gửi Email<span aria-hidden="true"> ↗</span></a>}
+      {messenger && primary?.type !== "messenger" && <a class="contact-cta__secondary" href={messenger.href} target="_blank" rel="noopener noreferrer">Messenger<span aria-hidden="true"> ↗</span></a>}
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact-cta {
+    overflow: hidden;
+    padding: clamp(3.5rem, 8vw, 7rem) 1.5rem;
+    color: white;
+    background: var(--color-navy);
+  }
+
+  .contact-cta__inner {
+    display: grid;
+    width: min(100%, 76rem);
+    grid-template-columns: minmax(0, 1.4fr) minmax(14rem, 0.6fr);
+    align-items: end;
+    gap: 3rem;
+    margin: 0 auto;
+  }
+
+  .contact-cta h2 {
+    max-width: 15ch;
+    margin-top: 0.8rem;
+    color: white;
+    font-size: clamp(2.25rem, 5vw, 4.3rem);
+    line-height: 1.06;
+    letter-spacing: -0.05em;
+  }
+
+  .contact-cta__copy > p:last-child {
+    max-width: 48ch;
+    margin-top: 1.1rem;
+    color: rgb(255 255 255 / 73%);
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .contact-cta__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.95rem;
+  }
+
+  .contact-cta__secondary {
+    color: rgb(255 255 255 / 85%);
+    font-size: 0.92rem;
+    text-decoration-color: rgb(255 255 255 / 35%);
+    text-underline-offset: 0.25em;
+  }
+
+  .contact-cta__secondary:hover {
+    color: white;
+  }
+
+  @media (max-width: 720px) {
+    .contact-cta__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
+</style>

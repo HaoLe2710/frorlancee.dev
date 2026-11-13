@@ -1,0 +1,413 @@
+{
+  "$schema": "https://emdashcms.com/seed.schema.json",
+  "version": "1",
+  "defaultLocale": "vi",
+  "meta": {
+    "name": "Frorlancee Dev",
+    "description": "Phát triển website, ứng dụng di động, phần mềm quản lý và giải pháp tự động hóa theo nhu cầu thực tế.",
+    "author": "Frorlancee Dev"
+  },
+  "settings": {
+    "title": "Frorlancee Dev",
+    "tagline": "Phát triển Website, Mobile App, phần mềm quản lý và các giải pháp tự động hóa theo nhu cầu thực tế.",
+    "seo": {
+      "titleSeparator": " | "
+    }
+  },
+  "collections": [
+    {
+      "slug": "homepage_content",
+      "label": "Nội dung trang chủ",
+      "labelSingular": "Nội dung trang chủ",
+      "routable": false,
+      "supports": ["drafts", "revisions", "preview"],
+      "fields": [
+        { "slug": "hero_eyebrow", "label": "Hero — dòng giới thiệu", "type": "string", "required": true },
+        { "slug": "hero_title", "label": "Hero — tiêu đề chính", "type": "string", "required": true },
+        { "slug": "hero_highlight", "label": "Hero — cụm từ nhấn mạnh", "type": "string", "required": true },
+        { "slug": "hero_description", "label": "Hero — mô tả", "type": "text", "required": true },
+        { "slug": "primary_cta_label", "label": "CTA chính — nhãn", "type": "string", "required": true },
+        { "slug": "primary_cta_url", "label": "CTA chính — liên kết", "type": "url", "required": true },
+        { "slug": "secondary_cta_label", "label": "CTA phụ — nhãn", "type": "string", "required": true },
+        { "slug": "secondary_cta_url", "label": "CTA phụ — liên kết", "type": "url", "required": true },
+        { "slug": "services_title", "label": "Dịch vụ — tiêu đề", "type": "string", "required": true },
+        { "slug": "services_intro", "label": "Dịch vụ — mô tả", "type": "text" },
+        { "slug": "projects_title", "label": "Dự án — tiêu đề", "type": "string", "required": true },
+        { "slug": "projects_intro", "label": "Dự án — mô tả", "type": "text" },
+        { "slug": "about_title", "label": "Giới thiệu — tiêu đề", "type": "string", "required": true },
+        { "slug": "process_title", "label": "Quy trình — tiêu đề", "type": "string", "required": true },
+        { "slug": "process_intro", "label": "Quy trình — mô tả", "type": "text" },
+        {
+          "slug": "process_steps",
+          "label": "Các bước triển khai",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 8,
+            "subFields": [
+              { "slug": "title", "label": "Tên bước", "type": "string", "required": true },
+              { "slug": "detail", "label": "Mô tả", "type": "text", "required": true }
+            ]
+          }
+        },
+        { "slug": "articles_title", "label": "Bài viết — tiêu đề", "type": "string", "required": true },
+        { "slug": "articles_intro", "label": "Bài viết — mô tả", "type": "text" },
+        { "slug": "contact_cta_title", "label": "Liên hệ — tiêu đề CTA", "type": "string", "required": true },
+        { "slug": "contact_cta_description", "label": "Liên hệ — mô tả CTA", "type": "text", "required": true },
+        { "slug": "default_seo_title", "label": "SEO mặc định — tiêu đề", "type": "string", "required": true },
+        { "slug": "default_seo_description", "label": "SEO mặc định — mô tả", "type": "text", "required": true },
+        { "slug": "canonical_base_url", "label": "SEO mặc định — URL chuẩn", "type": "url" },
+        { "slug": "footer_note", "label": "Footer — ghi chú", "type": "string" },
+        { "slug": "show_services", "label": "Hiện phần dịch vụ", "type": "boolean", "defaultValue": true },
+        { "slug": "show_projects", "label": "Hiện dự án nổi bật", "type": "boolean", "defaultValue": true },
+        { "slug": "show_about", "label": "Hiện phần giới thiệu", "type": "boolean", "defaultValue": true },
+        { "slug": "show_process", "label": "Hiện quy trình", "type": "boolean", "defaultValue": true },
+        { "slug": "show_articles", "label": "Hiện bài viết mới", "type": "boolean", "defaultValue": true },
+        { "slug": "show_contact_cta", "label": "Hiện CTA liên hệ", "type": "boolean", "defaultValue": true }
+      ]
+    },
+    {
+      "slug": "services",
+      "label": "Dịch vụ",
+      "labelSingular": "Dịch vụ",
+      "routable": false,
+      "supports": ["drafts", "revisions", "search"],
+      "fields": [
+        { "slug": "title", "label": "Tên dịch vụ", "type": "string", "required": true, "searchable": true },
+        { "slug": "icon_identifier", "label": "Biểu tượng", "type": "select", "validation": { "options": ["website", "mobile", "software", "automation"] } },
+        { "slug": "summary", "label": "Mô tả ngắn", "type": "text", "required": true, "searchable": true },
+        { "slug": "description", "label": "Mô tả chi tiết", "type": "text" },
+        { "slug": "audience", "label": "Phù hợp với", "type": "text" },
+        { "slug": "scope", "label": "Phạm vi giải pháp", "type": "text" },
+        {
+          "slug": "features",
+          "label": "Tính năng có thể triển khai",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 12,
+            "subFields": [{ "slug": "label", "label": "Tính năng", "type": "string", "required": true }]
+          }
+        },
+        { "slug": "cta_label", "label": "Nhãn liên hệ", "type": "string", "defaultValue": "Trao đổi về dịch vụ" },
+        { "slug": "cta_url", "label": "Liên kết CTA", "type": "url", "defaultValue": "/contact" },
+        { "slug": "sort_order", "label": "Thứ tự hiển thị", "type": "integer", "indexed": true, "defaultValue": 100 },
+        { "slug": "visible", "label": "Hiển thị công khai", "type": "boolean", "indexed": true, "defaultValue": true }
+      ]
+    },
+    {
+      "slug": "projects",
+      "label": "Dự án",
+      "labelSingular": "Dự án",
+      "routable": true,
+      "urlPattern": "/projects/{slug}",
+      "titleField": "title",
+      "supports": ["drafts", "revisions", "preview", "search", "seo"],
+      "fields": [
+        { "slug": "title", "label": "Tên dự án", "type": "string", "required": true, "searchable": true },
+        { "slug": "summary", "label": "Mô tả ngắn", "type": "text", "required": true, "searchable": true },
+        { "slug": "category", "label": "Phân loại", "type": "select", "required": true, "indexed": true, "validation": { "options": ["website", "mobile_app", "custom_software", "automation_tool"] } },
+        { "slug": "cover_image", "label": "Ảnh bìa", "type": "image", "validation": { "allowedMimeTypes": ["image/jpeg", "image/png", "image/webp", "image/avif"] } },
+        { "slug": "problem", "label": "Bài toán", "type": "text", "searchable": true },
+        { "slug": "solution", "label": "Giải pháp", "type": "text" },
+        {
+          "slug": "features",
+          "label": "Tính năng",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 24,
+            "subFields": [{ "slug": "label", "label": "Tính năng", "type": "string", "required": true }]
+          }
+        },
+        {
+          "slug": "tech_stack",
+          "label": "Công nghệ",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 24,
+            "subFields": [{ "slug": "name", "label": "Tên công nghệ", "type": "string", "required": true }]
+          }
+        },
+        { "slug": "result", "label": "Kết quả / tình trạng bàn giao", "type": "text" },
+        { "slug": "description", "label": "Nội dung chi tiết", "type": "portableText", "searchable": true },
+        {
+          "slug": "gallery",
+          "label": "Thư viện ảnh",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 24,
+            "subFields": [
+              { "slug": "image", "label": "Ảnh", "type": "image", "required": true },
+              { "slug": "caption", "label": "Chú thích", "type": "text" }
+            ]
+          }
+        },
+        { "slug": "demo_url", "label": "Liên kết demo", "type": "url" },
+        { "slug": "repository_url", "label": "Mã nguồn công khai", "type": "url" },
+        { "slug": "featured", "label": "Dự án nổi bật", "type": "boolean", "indexed": true, "defaultValue": false },
+        { "slug": "sort_order", "label": "Thứ tự hiển thị", "type": "integer", "indexed": true, "defaultValue": 100 }
+      ]
+    },
+    {
+      "slug": "posts",
+      "label": "Bài viết",
+      "labelSingular": "Bài viết",
+      "routable": true,
+      "urlPattern": "/blog/{slug}",
+      "titleField": "title",
+      "supports": ["drafts", "revisions", "preview", "search", "seo"],
+      "fields": [
+        { "slug": "title", "label": "Tiêu đề", "type": "string", "required": true, "searchable": true },
+        { "slug": "excerpt", "label": "Tóm tắt", "type": "text", "searchable": true },
+        { "slug": "cover_image", "label": "Ảnh bìa", "type": "image", "validation": { "allowedMimeTypes": ["image/jpeg", "image/png", "image/webp", "image/avif"] } },
+        { "slug": "content", "label": "Nội dung", "type": "portableText", "required": true, "searchable": true }
+      ]
+    },
+    {
+      "slug": "contact_links",
+      "label": "Liên kết liên hệ",
+      "labelSingular": "Liên kết liên hệ",
+      "routable": false,
+      "supports": ["drafts", "revisions"],
+      "fields": [
+        { "slug": "type", "label": "Loại liên hệ", "type": "select", "required": true, "validation": { "options": ["email", "facebook", "messenger", "zalo", "github", "linkedin", "website"] } },
+        { "slug": "label", "label": "Nhãn hiển thị", "type": "string", "required": true },
+        { "slug": "value", "label": "Địa chỉ / tên người dùng", "type": "string" },
+        { "slug": "url", "label": "Liên kết", "type": "url", "required": true },
+        { "slug": "visible", "label": "Hiển thị công khai", "type": "boolean", "indexed": true, "defaultValue": true },
+        { "slug": "sort_order", "label": "Thứ tự hiển thị", "type": "integer", "indexed": true, "defaultValue": 100 }
+      ]
+    },
+    {
+      "slug": "pages",
+      "label": "Trang nội dung",
+      "labelSingular": "Trang nội dung",
+      "routable": true,
+      "urlPattern": "/{slug}",
+      "titleField": "title",
+      "supports": ["drafts", "revisions", "preview", "search", "seo"],
+      "fields": [
+        { "slug": "title", "label": "Tiêu đề", "type": "string", "required": true, "searchable": true },
+        { "slug": "summary", "label": "Mô tả ngắn", "type": "text", "searchable": true },
+        { "slug": "content", "label": "Nội dung", "type": "portableText", "searchable": true },
+        {
+          "slug": "approach_points",
+          "label": "Nguyên tắc làm việc",
+          "type": "repeater",
+          "validation": {
+            "maxItems": 8,
+            "subFields": [
+              { "slug": "title", "label": "Tiêu đề", "type": "string", "required": true },
+              { "slug": "detail", "label": "Mô tả", "type": "text", "required": true }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "taxonomies": [
+    {
+      "name": "category",
+      "label": "Chuyên mục",
+      "labelSingular": "Chuyên mục",
+      "hierarchical": true,
+      "collections": ["posts"],
+      "terms": [
+        { "slug": "product", "label": "Sản phẩm số" },
+        { "slug": "engineering", "label": "Kỹ thuật" },
+        { "slug": "delivery", "label": "Quy trình & bàn giao" }
+      ]
+    },
+    {
+      "name": "tag",
+      "label": "Thẻ",
+      "labelSingular": "Thẻ",
+      "hierarchical": false,
+      "collections": ["posts"],
+      "terms": []
+    }
+  ],
+  "menus": [
+    {
+      "name": "primary",
+      "label": "Điều hướng chính",
+      "items": [
+        { "type": "custom", "label": "Trang chủ", "url": "/" },
+        { "type": "custom", "label": "Dịch vụ", "url": "/services" },
+        { "type": "custom", "label": "Dự án", "url": "/projects" },
+        { "type": "custom", "label": "Bài viết", "url": "/blog" },
+        { "type": "custom", "label": "Về chúng tôi", "url": "/about" },
+        { "type": "custom", "label": "Liên hệ", "url": "/contact" }
+      ]
+    }
+  ],
+  "content": {
+    "homepage_content": [
+      {
+        "id": "homepage-default",
+        "status": "published",
+        "data": {
+          "hero_eyebrow": "From Ideas to Digital Solutions",
+          "hero_title": "Biến ý tưởng thành",
+          "hero_highlight": "sản phẩm số.",
+          "hero_description": "Phát triển Website, Mobile App, phần mềm và công cụ tự động hóa theo nhu cầu thực tế.",
+          "primary_cta_label": "Trao đổi dự án",
+          "primary_cta_url": "/contact",
+          "secondary_cta_label": "Khám phá dự án",
+          "secondary_cta_url": "/projects",
+          "services_title": "Giải pháp phù hợp với bài toán",
+          "services_intro": "Từ một website mới đến phần mềm hỗ trợ vận hành, phạm vi triển khai bắt đầu từ nhu cầu thực tế.",
+          "projects_title": "Dự án tiêu biểu",
+          "projects_intro": "Một số sản phẩm đã được công bố.",
+          "about_title": "Hiểu bài toán trước khi viết dòng code đầu tiên.",
+          "process_title": "Cùng đi từ yêu cầu đến sản phẩm hoàn chỉnh.",
+          "process_intro": "Mỗi giai đoạn có mục tiêu rõ ràng để bạn biết điều gì sẽ diễn ra tiếp theo.",
+          "process_steps": [
+            { "title": "Tiếp nhận yêu cầu", "detail": "Làm rõ mục tiêu, người dùng, quy trình hiện tại và những giới hạn cần tính đến." },
+            { "title": "Phân tích & đề xuất", "detail": "Xác định phạm vi phù hợp, các lựa chọn triển khai và những ưu tiên quan trọng." },
+            { "title": "Thiết kế & phát triển", "detail": "Xây dựng luồng sử dụng và phần mềm theo phạm vi đã thống nhất." },
+            { "title": "Kiểm thử & bàn giao", "detail": "Kiểm tra các luồng chính, hoàn thiện hướng dẫn và bàn giao sản phẩm." }
+          ],
+          "articles_title": "Góc chia sẻ",
+          "articles_intro": "Ghi chú về phát triển phần mềm, sản phẩm số và tự động hóa.",
+          "contact_cta_title": "Bạn đang có một ý tưởng cần hiện thực hóa?",
+          "contact_cta_description": "Hãy chia sẻ nhu cầu của bạn để cùng tìm ra giải pháp phù hợp.",
+          "default_seo_title": "Frorlancee Dev | Phát triển giải pháp số theo yêu cầu",
+          "default_seo_description": "Frorlancee Dev chuyên phát triển Website, Mobile App, phần mềm quản lý và các giải pháp tự động hóa theo nhu cầu thực tế.",
+          "footer_note": "Tập trung vào đúng bài toán. Xây dựng giải pháp phù hợp.",
+          "show_services": true,
+          "show_projects": true,
+          "show_about": true,
+          "show_process": true,
+          "show_articles": true,
+          "show_contact_cta": true
+        }
+      }
+    ],
+    "services": [
+      {
+        "id": "service-website",
+        "status": "published",
+        "data": {
+          "title": "Website Development",
+          "icon_identifier": "website",
+          "summary": "Website giới thiệu, trang sản phẩm và cổng thông tin được xây dựng theo mục tiêu sử dụng.",
+          "description": "Phát triển website từ kiến trúc nội dung, giao diện đến các chức năng quản trị cần thiết.",
+          "audience": "Cá nhân, startup, nhóm dự án và doanh nghiệp cần hiện diện số hoặc một kênh phục vụ khách hàng.",
+          "scope": "Website giới thiệu, trang sản phẩm, landing page, blog và cổng thông tin theo yêu cầu.",
+          "features": [
+            { "label": "Giao diện responsive cho mobile, tablet và desktop" },
+            { "label": "Quản lý bài viết, dự án và nội dung qua CMS" },
+            { "label": "Metadata SEO và tối ưu hiệu năng cơ bản" }
+          ],
+          "cta_label": "Trao đổi về website",
+          "cta_url": "/contact",
+          "sort_order": 10,
+          "visible": true
+        }
+      },
+      {
+        "id": "service-mobile-app",
+        "status": "published",
+        "data": {
+          "title": "Mobile App Development",
+          "icon_identifier": "mobile",
+          "summary": "Ứng dụng di động tập trung vào các luồng sử dụng thiết yếu và nhu cầu vận hành thực tế.",
+          "description": "Phân tích trải nghiệm, thiết kế luồng chính và phát triển ứng dụng di động theo phạm vi dự án.",
+          "audience": "Cá nhân, startup hoặc doanh nghiệp cần một trải nghiệm dịch vụ trên thiết bị di động.",
+          "scope": "Ứng dụng cho iOS và Android, giao tiếp với API và các chức năng cần thiết cho sản phẩm.",
+          "features": [
+            { "label": "Thiết kế luồng và màn hình theo nhóm người dùng" },
+            { "label": "Tích hợp API và đồng bộ dữ liệu" },
+            { "label": "Kiểm thử các luồng sử dụng chính trước bàn giao" }
+          ],
+          "cta_label": "Trao đổi về ứng dụng",
+          "cta_url": "/contact",
+          "sort_order": 20,
+          "visible": true
+        }
+      },
+      {
+        "id": "service-custom-software",
+        "status": "published",
+        "data": {
+          "title": "Custom Software",
+          "icon_identifier": "software",
+          "summary": "Phần mềm quản lý và công cụ nội bộ được thiết kế quanh quy trình riêng của tổ chức.",
+          "description": "Xây dựng phần mềm để gom dữ liệu, chuẩn hóa quy trình và hỗ trợ công việc hằng ngày.",
+          "audience": "Nhóm dự án và doanh nghiệp đang quản lý công việc bằng nhiều công cụ rời rạc.",
+          "scope": "Ứng dụng nội bộ, dashboard quản lý, hệ thống nhập liệu và quy trình nghiệp vụ.",
+          "features": [
+            { "label": "Quản lý dữ liệu và phân quyền theo vai trò" },
+            { "label": "Dashboard và báo cáo theo nhu cầu" },
+            { "label": "Tích hợp với quy trình và dịch vụ hiện có" }
+          ],
+          "cta_label": "Trao đổi về phần mềm",
+          "cta_url": "/contact",
+          "sort_order": 30,
+          "visible": true
+        }
+      },
+      {
+        "id": "service-automation",
+        "status": "published",
+        "data": {
+          "title": "Automation Tools",
+          "icon_identifier": "automation",
+          "summary": "Công cụ tự động hóa các thao tác lặp lại để giảm công việc thủ công trong quy trình.",
+          "description": "Phân tích tác vụ, xác định điểm có thể tự động hóa và triển khai công cụ phù hợp với môi trường sử dụng.",
+          "audience": "Cá nhân và nhóm vận hành thường xuyên xử lý dữ liệu hoặc thao tác lặp lại.",
+          "scope": "Tiện ích desktop, script xử lý dữ liệu, tích hợp dịch vụ và tác vụ tự động hóa.",
+          "features": [
+            { "label": "Tự động hóa quy trình lặp lại" },
+            { "label": "Kết nối các công cụ đang sử dụng" },
+            { "label": "Ghi nhận lỗi và hướng dẫn vận hành" }
+          ],
+          "cta_label": "Trao đổi về tự động hóa",
+          "cta_url": "/contact",
+          "sort_order": 40,
+          "visible": true
+        }
+      }
+    ],
+    "pages": [
+      {
+        "id": "about",
+        "slug": "about",
+        "status": "published",
+        "data": {
+          "title": "Về Frorlancee Dev",
+          "summary": "Frorlancee Dev chuyên phát triển website, ứng dụng di động, phần mềm quản lý và công cụ tự động hóa theo nhu cầu thực tế.",
+          "content": [
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Frorlancee Dev là thương hiệu phát triển các giải pháp phần mềm theo yêu cầu cho cá nhân, startup, nhóm dự án và doanh nghiệp.", "_key": "about-p1-span" }], "_key": "about-p1" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Website, ứng dụng di động, phần mềm quản lý hay công cụ tự động hóa đều bắt đầu từ cùng một câu hỏi: công việc nào cần trở nên rõ ràng, nhanh hơn hoặc dễ sử dụng hơn?", "_key": "about-p2-span" }], "_key": "about-p2" },
+            { "_type": "block", "style": "h2", "children": [{ "_type": "span", "text": "Cách làm việc", "_key": "about-h2-span" }], "_key": "about-h2" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Trước khi chọn công nghệ, Frorlancee Dev tìm hiểu mục tiêu, người sử dụng, quy trình hiện tại và giới hạn của dự án. Phạm vi được đề xuất dựa trên những gì cần thiết để giải quyết bài toán, không dựa trên một bộ tính năng cố định.", "_key": "about-p3-span" }], "_key": "about-p3" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Trong quá trình phát triển, ưu tiên được đặt vào khả năng sử dụng, hiệu năng phù hợp và cấu trúc dễ bảo trì. Các bước kiểm thử và bàn giao được thống nhất theo phạm vi của từng dự án.", "_key": "about-p4-span" }], "_key": "about-p4" }
+          ],
+          "approach_points": [
+            { "title": "Hiểu bài toán trước", "detail": "Làm rõ mục tiêu và nhu cầu của người sử dụng trước khi đề xuất giải pháp." },
+            { "title": "Chọn phạm vi phù hợp", "detail": "Ưu tiên phần cần thiết cho dự án, có thể mở rộng theo nhu cầu thực tế." },
+            { "title": "Chú trọng trải nghiệm", "detail": "Tổ chức luồng sử dụng rõ ràng, responsive và hiệu năng phù hợp." },
+            { "title": "Dễ tiếp tục bảo trì", "detail": "Bàn giao cấu trúc và hướng dẫn để sản phẩm có thể tiếp tục phát triển." }
+          ]
+        }
+      },
+      {
+        "id": "privacy",
+        "slug": "privacy",
+        "status": "published",
+        "data": {
+          "title": "Quyền riêng tư",
+          "summary": "Thông tin về dữ liệu được xử lý khi truy cập website Frorlancee Dev.",
+          "content": [
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Website Frorlancee Dev giới thiệu dịch vụ, dự án và bài viết. Website hiện không có biểu mẫu lưu yêu cầu khách hàng hoặc công cụ phân tích hành vi của khách truy cập.", "_key": "privacy-p1-span" }], "_key": "privacy-p1" },
+            { "_type": "block", "style": "h2", "children": [{ "_type": "span", "text": "Liên hệ qua dịch vụ bên ngoài", "_key": "privacy-h1-span" }], "_key": "privacy-h1" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Khi bạn chọn email, Messenger hoặc một liên kết liên hệ khác, thông tin bạn gửi được xử lý bởi dịch vụ tương ứng theo chính sách của nhà cung cấp đó.", "_key": "privacy-p2-span" }], "_key": "privacy-p2" },
+            { "_type": "block", "style": "h2", "children": [{ "_type": "span", "text": "Dữ liệu kỹ thuật", "_key": "privacy-h2-span" }], "_key": "privacy-h2" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Hạ tầng Cloudflare có thể xử lý nhật ký kỹ thuật cần thiết để cung cấp, vận hành và bảo vệ website. Khu vực quản trị EmDash sử dụng cơ chế xác thực và dữ liệu phiên kỹ thuật để cho phép người quản trị làm việc.", "_key": "privacy-p3-span" }], "_key": "privacy-p3" },
+            { "_type": "block", "style": "normal", "children": [{ "_type": "span", "text": "Nếu cách website xử lý dữ liệu thay đổi, nội dung trang này cần được cập nhật để phản ánh thay đổi đó.", "_key": "privacy-p4-span" }], "_key": "privacy-p4" }
+          ]
+        }
+      }
+    ]
+  }
+}

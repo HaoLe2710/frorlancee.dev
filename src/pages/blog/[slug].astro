@@ -1,0 +1,68 @@
+---
+import { decodeSlug, getEmDashEntry, getSeoMeta } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import { formatDate } from "../../lib/content";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) return Astro.rewrite("/404");
+const { entry: post, error, cacheHint } = await getEmDashEntry("posts", slug);
+if (error) console.error("Unable to load public article.");
+if (!post) return Astro.rewrite("/404");
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(post, {
+  siteUrl: Astro.url.origin,
+  path: `/blog/${slug}`,
+  defaultDescription: post.data.excerpt || "Bài viết từ Frorlancee Dev.",
+  defaultOgImage: post.data.cover_image?.src,
+});
+const publishedAt = post.data.publishedAt;
+const formattedDate = formatDate(publishedAt);
+---
+
+<Base
+  title={seo.title}
+  pageTitle={seo.ogTitle}
+  description={seo.description}
+  image={seo.ogImage}
+  canonical={seo.canonical}
+  robots={seo.robots}
+  type="article"
+  content={{ collection: "posts", id: post.data.id, slug }}
+  articleMeta={{ publishedAt, author: "Frorlancee Dev" }}
+>
+  <article class="shell article-page">
+    <Breadcrumbs items={[{ label: "Bài viết", href: "/blog" }, { label: post.data.title }]} />
+    <header class="article-header">
+      <p class="eyebrow">Frorlancee Dev · Bài viết</p>
+      <h1 {...post.edit.title}>{post.data.title}</h1>
+      {formattedDate && <time datetime={publishedAt instanceof Date ? publishedAt.toISOString() : new Date(publishedAt!).toISOString()}>{formattedDate}</time>}
+      {post.data.excerpt && <p class="article-excerpt" {...post.edit.excerpt}>{post.data.excerpt}</p>}
+    </header>
+    {post.data.cover_image && <figure class="article-cover" {...post.edit.cover_image}><Image image={post.data.cover_image} /></figure>}
+    <div class="article-content" {...post.edit.content}><PortableText value={post.data.content} /></div>
+    <footer class="article-footer"><a href="/blog">← Xem các bài viết khác</a></footer>
+  </article>
+</Base>
+
+<style>
+  .article-page { padding-block: 2rem 6rem; }
+  .article-header { max-width: 54rem; padding-block: 3.5rem 2.5rem; }
+  .article-header h1 { margin-top: .65rem; color: var(--color-navy); font-size: clamp(2.7rem, 7vw, 5.25rem); line-height: 1.04; letter-spacing: -.06em; }
+  .article-header time { display: block; margin-top: 1.2rem; color: var(--color-muted); font-size: .88rem; }
+  .article-excerpt { max-width: 47rem; margin-top: 1.2rem; color: var(--color-muted); font-size: 1.15rem; line-height: 1.75; }
+  .article-cover { overflow: hidden; margin: 0; border: 1px solid var(--color-border); border-radius: 1.35rem; background: var(--color-surface); }
+  .article-cover :global(img) { display: block; width: 100%; max-height: 48rem; object-fit: cover; }
+  .article-content { max-width: 46rem; margin: 3.5rem auto 0; color: var(--color-text); font-size: 1.05rem; line-height: 1.9; }
+  .article-content :global(p) { margin-block: 0 1.35em; }
+  .article-content :global(h2) { margin-block: 2em .65em; color: var(--color-navy); font-size: 1.65rem; line-height: 1.2; letter-spacing: -.04em; }
+  .article-content :global(h3) { margin-block: 1.8em .6em; color: var(--color-navy); font-size: 1.25rem; }
+  .article-content :global(ul), .article-content :global(ol) { margin-block: 1em 1.5em; padding-left: 1.4rem; }
+  .article-content :global(li) { margin-block: .35em; }
+  .article-content :global(a) { color: var(--color-blue); text-underline-offset: .2em; }
+  .article-footer { max-width: 46rem; margin: 3rem auto 0; padding-top: 1.5rem; border-top: 1px solid var(--color-border); }
+  .article-footer a { color: var(--color-navy); font-weight: 600; text-decoration: none; }
+  .article-footer a:hover { text-decoration: underline; text-underline-offset: .2em; }
+</style>

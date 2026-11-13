@@ -1,0 +1,47 @@
+---
+import { getEmDashCollection } from "emdash";
+import Base from "../../layouts/Base.astro";
+import ArticleCard from "../../components/ArticleCard.astro";
+import EmptyState from "../../components/EmptyState.astro";
+
+const pageSize = 9;
+const requestedPage = Number(Astro.url.searchParams.get("page") ?? "1");
+const currentPage = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+const result = await getEmDashCollection("posts", {
+  limit: pageSize,
+  offset: (currentPage - 1) * pageSize,
+  orderBy: { published_at: "desc" },
+});
+if (result.error) console.error("Unable to load public articles.");
+if (Astro.cache?.enabled) Astro.cache.set(result.cacheHint);
+if (currentPage > 1 && result.entries.length === 0) return Astro.redirect("/blog", 302);
+---
+
+<Base title="Bài viết" description="Ghi chú về sản phẩm số, kỹ thuật và quy trình phát triển tại Frorlancee Dev.">
+  <main class="shell blog-index">
+    <header class="blog-header">
+      <p class="eyebrow">Ghi chú</p>
+      <h1>Bài viết</h1>
+      <p>Chia sẻ về sản phẩm số, kỹ thuật và quy trình phát triển từ những công việc thực tế.</p>
+    </header>
+    {result.entries.length > 0 ? <div class="article-grid">{result.entries.map((post) => <ArticleCard title={post.data.title} excerpt={post.data.excerpt} href={`/blog/${post.id}`} publishedAt={post.data.publishedAt} coverImage={post.data.cover_image} />)}</div> : <EmptyState title="Chưa có bài viết công khai" description="Bài viết sẽ xuất hiện tại đây sau khi được biên tập và xuất bản trong CMS." actionLabel="Về trang chủ" actionHref="/" />}
+    {(currentPage > 1 || result.hasMore) && <nav class="pagination" aria-label="Điều hướng bài viết">
+      {currentPage > 1 && <a href={currentPage === 2 ? "/blog" : `/blog?page=${currentPage - 1}`}>← Trang trước</a>}
+      <span>Trang {currentPage}</span>
+      {result.hasMore && <a href={`/blog?page=${currentPage + 1}`}>Trang tiếp →</a>}
+    </nav>}
+  </main>
+</Base>
+
+<style>
+  .blog-index { padding-block: clamp(3.75rem, 7vw, 6rem) 6rem; }
+  .blog-header { max-width: 48rem; margin-bottom: 2.75rem; }
+  .blog-header h1 { max-width: 15ch; margin-top: .65rem; color: var(--color-navy); font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.04; letter-spacing: -.06em; }
+  .blog-header > p:last-child { max-width: 44rem; margin-top: 1rem; color: var(--color-muted); font-size: clamp(1rem, 1.35vw, 1.12rem); line-height: 1.75; }
+  .article-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem 1.5rem; margin-top: 2.75rem; }
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 1.25rem; margin-top: 3rem; color: var(--color-muted); }
+  .pagination a { color: var(--color-navy); font-weight: 600; text-decoration: none; }
+  .pagination a:hover { text-decoration: underline; text-underline-offset: .2em; }
+  @media (max-width: 900px) { .article-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 620px) { .article-grid { grid-template-columns: 1fr; } }
+</style>

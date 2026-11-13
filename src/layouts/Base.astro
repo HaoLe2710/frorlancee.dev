@@ -1,0 +1,261 @@
+---
+import { getEmDashCollection, getMenuWithCacheHint, getSiteSettingsWithCacheHint, type MediaValue } from "emdash";
+import { Image, EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import { Font } from "astro:assets";
+import { getVisibleContactLinks, isExternalHref, safeHref } from "../lib/content";
+import "../styles/global.css";
+import "../styles/tokens.css";
+import "../styles/theme.css";
+
+interface Props {
+  title?: string;
+  pageTitle?: string | null;
+  description?: string | null;
+  image?: string | null;
+  canonical?: string | null;
+  robots?: string | null;
+  type?: "website" | "article";
+  content?: { collection: string; id: string; slug?: string | null };
+  articleMeta?: { publishedAt?: Date | string | null; modifiedAt?: Date | string | null; author?: string };
+}
+
+const {
+  title,
+  pageTitle,
+  description,
+  image,
+  canonical,
+  robots,
+  type = "website",
+  content,
+  articleMeta,
+} = Astro.props;
+
+const [settingsResult, menuResult, homepageResult, servicesResult, contactLinks] = await Promise.all([
+  getSiteSettingsWithCacheHint(),
+  getMenuWithCacheHint("primary"),
+  getEmDashCollection("homepage_content", { limit: 1 }),
+  getEmDashCollection("services", { limit: 50, orderBy: { sort_order: "asc" } }),
+  getVisibleContactLinks(),
+]);
+
+const settings = settingsResult.data;
+const menu = menuResult.data;
+const homeContent = homepageResult.entries[0]?.data;
+const footerServices = servicesResult.entries.filter((service) => service.data.visible !== false).slice(0, 12);
+if (homepageResult.error) console.error("Unable to load homepage settings.");
+if (servicesResult.error) console.error("Unable to load public services.");
+if (Astro.cache?.enabled) {
+  Astro.cache.set(settingsResult.cacheHint);
+  Astro.cache.set(menuResult.cacheHint);
+  Astro.cache.set(homepageResult.cacheHint);
+  Astro.cache.set(servicesResult.cacheHint);
+}
+
+const siteTitle = (typeof settings?.title === "string" ? settings.title.trim() : "") || "Frorlancee Dev";
+const settingTagline = typeof settings?.tagline === "string" ? settings.tagline : undefined;
+const siteDescription = homeContent?.default_seo_description || settingTagline || "Phát triển Website, Mobile App, phần mềm quản lý và các giải pháp tự động hóa theo nhu cầu thực tế.";
+const separator = typeof settings?.seo?.titleSeparator === "string" ? settings.seo.titleSeparator : " | ";
+const titleCandidate = title?.trim() || siteTitle;
+const fullTitle = titleCandidate === siteTitle || titleCandidate.startsWith(`${siteTitle}${separator}`) || titleCandidate.endsWith(`${separator}${siteTitle}`)
+  ? titleCandidate
+  : `${titleCandidate}${separator}${siteTitle}`;
+
+let canonicalOrigin = Astro.url.origin;
+const configuredOrigin = (typeof settings?.url === "string" ? settings.url : undefined) || homeContent?.canonical_base_url;
+if (configuredOrigin) {
+  try {
+    const parsedOrigin = new URL(configuredOrigin);
+    if (parsedOrigin.protocol === "https:" || parsedOrigin.hostname === "localhost") canonicalOrigin = parsedOrigin.origin;
+  } catch {
+    console.error("Ignoring an invalid canonical base URL.");
+  }
+}
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, `${canonicalOrigin}/`).href;
+
+const pageCtx = createPublicPageContext({
+  Astro,
+  kind: content ? "content" : "custom",
+  pageType: type,
+  title: fullTitle,
+  pageTitle: pageTitle ?? title ?? siteTitle,
+  description: typeof description === "string" && description ? description : siteDescription,
+  canonical: canonicalUrl,
+  image,
+  content,
+  seo: { ogImage: image, robots },
+  siteName: siteTitle,
+  articleMeta,
+});
+
+const logoCandidate = settings?.logo as unknown as { id?: string; src?: string; alt?: string } | null | undefined;
+const siteLogo = logoCandidate?.id && logoCandidate.src ? logoCandidate as MediaValue : undefined;
+const menuItems = (menu?.items ?? []).filter((item) => safeHref(item.url));
+const socialLinks = contactLinks.filter((link) => link.type !== "email");
+const primaryCtaLabel = homeContent?.primary_cta_label || "Trao đổi dự án";
+const primaryCtaUrl = safeHref(homeContent?.primary_cta_url) || "/contact";
+const isLoggedIn = Boolean(Astro.locals.user);
+---
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0B1E35" />
+    <title>{fullTitle}</title>
+    <EmDashHead page={pageCtx} />
+    <Font cssVariable="--font-heading" preload />
+    <link rel="alternate" type="application/rss+xml" title={`${siteTitle} — Bài viết`} href="/rss.xml" />
+  </head>
+  <body>
+    <EmDashBodyStart page={pageCtx} />
+    <a class="skip-link" href="#main-content">Đi đến nội dung</a>
+    <header class="site-header">
+      <div class="header-shell">
+        <a href="/" class="brand" aria-label={`${siteTitle} — Trang chủ`}>
+          {siteLogo ? (
+            <Image image={siteLogo} alt={siteLogo.alt || siteTitle} />
+          ) : (
+            <span class="brand-mark" aria-hidden="true">FD</span>
+          )}
+          <span class="brand-name">{siteTitle}</span>
+        </a>
+
+        <button
+          class="menu-toggle"
+          type="button"
+          aria-label="Mở menu"
+          aria-controls="primary-navigation"
+          aria-expanded="false"
+        >
+          <span></span>
+          <span></span>
+          <span class="sr-only">Mở menu</span>
+        </button>
+
+        <nav id="primary-navigation" class="primary-nav" aria-label="Điều hướng chính" data-open="false">
+          <div class="primary-nav__links">
+            {menuItems.map((item) => {
+              const href = safeHref(item.url);
+              if (!href) return null;
+              const current = Astro.url.pathname === href || (href !== "/" && Astro.url.pathname.startsWith(`${href}/`));
+              const external = isExternalHref(href);
+              return (
+                <a
+                  href={href}
+                  target={external ? "_blank" : item.target}
+                  rel={external || item.target === "_blank" ? "noopener noreferrer" : undefined}
+                  aria-current={current ? "page" : undefined}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
+          </div>
+          <a class="button button--nav" href={primaryCtaUrl}>{primaryCtaLabel}<span aria-hidden="true"> →</span></a>
+          {isLoggedIn && <a class="nav-admin" href="/_emdash/admin/">Quản trị</a>}
+        </nav>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-shell">
+        <div class="footer-top">
+          <div class="footer-brand-block">
+            <a href="/" class="brand brand--footer" aria-label={`${siteTitle} — Trang chủ`}>
+              {siteLogo ? (
+                <Image image={siteLogo} alt={siteLogo.alt || siteTitle} />
+              ) : (
+                <span class="brand-mark" aria-hidden="true">FD</span>
+              )}
+              <span class="brand-name">{siteTitle}</span>
+            </a>
+            <p>{settings?.tagline || siteDescription}</p>
+            {homeContent?.footer_note && <p class="footer-note">{homeContent.footer_note}</p>}
+          </div>
+
+          <div class="footer-column">
+            <h2>Điều hướng</h2>
+            <ul>
+              {menuItems.map((item) => {
+                const href = safeHref(item.url);
+                return href && <li><a href={href}>{item.label}</a></li>;
+              })}
+              <li><a href="/privacy">Quyền riêng tư</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h2>Dịch vụ</h2>
+            <ul>
+              {footerServices.map((service) => <li><a href="/services">{service.data.title}</a></li>)}
+              {footerServices.length === 0 && <li><a href="/services">Xem các dịch vụ</a></li>}
+            </ul>
+          </div>
+
+          <div class="footer-column footer-column--contact">
+            <h2>Liên hệ</h2>
+            {contactLinks.length > 0 ? (
+              <ul>
+                {contactLinks.map((link) => (
+                  <li>
+                    <a href={link.href} target={isExternalHref(link.href) ? "_blank" : undefined} rel={isExternalHref(link.href) ? "noopener noreferrer" : undefined}>
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Chưa có kênh liên hệ công khai.</p>
+            )}
+            {socialLinks.length > 0 && (
+              <div class="footer-social" aria-label="Mạng xã hội">
+                {socialLinks.map((link) => <a href={link.href} target={isExternalHref(link.href) ? "_blank" : undefined} rel={isExternalHref(link.href) ? "noopener noreferrer" : undefined}>{link.label}</a>)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>© {new Date().getFullYear()} {siteTitle}. Bảo lưu mọi quyền.</p>
+          <a href="/privacy">Quyền riêng tư</a>
+        </div>
+      </div>
+    </footer>
+    <EmDashBodyEnd page={pageCtx} />
+
+    <script>
+      const menuButton = document.querySelector<HTMLButtonElement>(".menu-toggle");
+      const primaryNavigation = document.querySelector<HTMLElement>("#primary-navigation");
+
+      function closeMenu() {
+        if (!menuButton || !primaryNavigation) return;
+        menuButton.setAttribute("aria-expanded", "false");
+        menuButton.setAttribute("aria-label", "Mở menu");
+        primaryNavigation.dataset.open = "false";
+      }
+
+      menuButton?.addEventListener("click", () => {
+        if (!primaryNavigation) return;
+        const willOpen = menuButton.getAttribute("aria-expanded") !== "true";
+        menuButton.setAttribute("aria-expanded", String(willOpen));
+        menuButton.setAttribute("aria-label", willOpen ? "Đóng menu" : "Mở menu");
+        primaryNavigation.dataset.open = String(willOpen);
+      });
+
+      primaryNavigation?.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", closeMenu);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu();
+      });
+    </script>
+  </body>
+</html>

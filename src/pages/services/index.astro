@@ -1,0 +1,107 @@
+---
+import { getEmDashCollection } from "emdash";
+import Base from "../../layouts/Base.astro";
+import ContactCTA from "../../components/ContactCTA.astro";
+import EmptyState from "../../components/EmptyState.astro";
+import ServiceCard from "../../components/ServiceCard.astro";
+import { getVisibleContactLinks } from "../../lib/content";
+
+const [homeResult, serviceResult, contactLinks] = await Promise.all([
+  getEmDashCollection("homepage_content", { limit: 1 }),
+  getEmDashCollection("services", { limit: 50, orderBy: { sort_order: "asc" } }),
+  getVisibleContactLinks(),
+]);
+const home = homeResult.entries[0]?.data;
+const services = serviceResult.entries.filter((service) => service.data.visible !== false);
+if (homeResult.error) console.error("Unable to load homepage settings for services page.");
+if (serviceResult.error) console.error("Unable to load public services.");
+const description = home?.services_intro || "Website, ứng dụng di động, phần mềm quản lý và công cụ tự động hóa được xây dựng theo nhu cầu thực tế.";
+---
+
+<Base title="Dịch vụ" description={description}>
+  <div class="shell page-shell">
+    <header class="page-header">
+      <p class="eyebrow">Dịch vụ</p>
+      <h1>Giải pháp bắt đầu từ nhu cầu thực tế.</h1>
+      <p>{description} Phạm vi và chi phí được xác định theo yêu cầu của từng dự án.</p>
+    </header>
+
+    {services.length > 0 ? (
+      <div class="service-detail-grid">
+        {services.map((service, index) => (
+          <ServiceCard
+            id={`service-${index + 1}`}
+            title={service.data.title}
+            summary={service.data.summary}
+            description={service.data.description}
+            audience={service.data.audience}
+            scope={service.data.scope}
+            features={service.data.features}
+            icon={service.data.icon_identifier}
+            ctaLabel={service.data.cta_label}
+            ctaUrl={service.data.cta_url}
+            detailed
+          />
+        ))}
+      </div>
+    ) : (
+      <EmptyState title="Dịch vụ đang được cập nhật" description="Dịch vụ công khai sẽ xuất hiện ở đây sau khi được tạo và xuất bản trong EmDash." actionLabel="Liên hệ" actionHref="/contact" />
+    )}
+
+    <p class="pricing-note">Không có bảng giá cố định ở giai đoạn này. Chi phí phụ thuộc vào phạm vi, yêu cầu tích hợp và cách bàn giao của từng dự án.</p>
+  </div>
+  {home?.contact_cta_title && <ContactCTA heading={home.contact_cta_title} description={home.contact_cta_description} links={contactLinks} />}
+</Base>
+
+<style>
+  .page-shell {
+    padding-block: clamp(3.75rem, 7vw, 6rem) clamp(4rem, 8vw, 7rem);
+  }
+
+  .page-header {
+    max-width: 52rem;
+    margin-bottom: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .page-header h1 {
+    max-width: 16ch;
+    color: var(--color-navy);
+    font-size: clamp(2.75rem, 6vw, 5rem);
+    line-height: 1.03;
+    letter-spacing: -0.06em;
+  }
+
+  .page-header > p:last-child {
+    max-width: 48rem;
+    margin-top: 1.25rem;
+    color: var(--color-muted);
+    font-size: 1.08rem;
+    line-height: 1.75;
+  }
+
+  .service-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .pricing-note {
+    margin-top: 2.5rem;
+    padding: 1rem 1.1rem;
+    border-left: 3px solid var(--color-blue);
+    color: var(--color-muted);
+    background: var(--color-surface);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 620px) {
+    .service-detail-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .page-header h1 {
+      font-size: clamp(2.5rem, 12vw, 3.8rem);
+    }
+  }
+</style>

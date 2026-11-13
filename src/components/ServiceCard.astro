@@ -1,0 +1,159 @@
+---
+import ServiceIcon from "./ServiceIcon.astro";
+import { isExternalHref, safeHref } from "../lib/content";
+
+interface Feature {
+  label: string;
+}
+
+interface Props {
+  title: string;
+  summary: string;
+  description?: string | null;
+  audience?: string | null;
+  scope?: string | null;
+  features?: Feature[] | null;
+  icon?: string | null;
+  ctaLabel?: string | null;
+  ctaUrl?: string | null;
+  id?: string;
+  detailed?: boolean;
+}
+
+const {
+  title,
+  summary,
+  description,
+  audience,
+  scope,
+  features = [],
+  icon,
+  ctaLabel,
+  ctaUrl,
+  id,
+  detailed = false,
+} = Astro.props;
+const href = safeHref(ctaUrl) || "/contact";
+const external = isExternalHref(href);
+---
+
+<article class:list={["service-card", detailed && "service-card--detailed"]} id={id}>
+  <div class="service-card__icon"><ServiceIcon name={icon} /></div>
+  <div class="service-card__content">
+    <h3>{title}</h3>
+    <p class="service-card__summary">{summary}</p>
+    {detailed && description && <p class="service-card__description">{description}</p>}
+    {detailed && audience && <p class="service-card__detail"><strong>Phù hợp với:</strong> {audience}</p>}
+    {detailed && scope && <p class="service-card__detail"><strong>Phạm vi:</strong> {scope}</p>}
+    {detailed && features && features.length > 0 && (
+      <ul class="service-card__features">
+        {features.map((feature) => <li>{feature.label}</li>)}
+      </ul>
+    )}
+    <a class="text-link" href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>
+      {ctaLabel || "Trao đổi về dịch vụ"}<span aria-hidden="true"> →</span>
+    </a>
+  </div>
+</article>
+
+<style>
+  .service-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.4rem;
+    padding: clamp(1.4rem, 2.5vw, 2rem);
+    border: 1px solid var(--color-border);
+    border-radius: 1.15rem;
+    background: #ffffff;
+    transition: border-color 170ms ease, transform 170ms ease, box-shadow 170ms ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-3px);
+    border-color: rgb(0 168 245 / 46%);
+    box-shadow: 0 14px 36px rgb(11 30 53 / 6%);
+  }
+
+  .service-card__icon {
+    display: grid;
+    width: 3.1rem;
+    height: 3.1rem;
+    place-items: center;
+    border: 1px solid rgb(0 168 245 / 24%);
+    border-radius: 0.9rem;
+    background: rgb(0 168 245 / 7%);
+  }
+
+  .service-card h3 {
+    margin-bottom: 0.6rem;
+    color: var(--color-navy);
+    font-size: 1.2rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+  }
+
+  .service-card__summary,
+  .service-card__description,
+  .service-card__detail {
+    color: var(--color-muted);
+    line-height: 1.7;
+  }
+
+  .service-card__description {
+    margin-top: 0.85rem;
+  }
+
+  .service-card__detail {
+    margin-top: 0.7rem;
+    font-size: 0.92rem;
+  }
+
+  .service-card__detail strong {
+    color: var(--color-navy);
+    font-weight: 650;
+  }
+
+  .service-card__features {
+    display: grid;
+    gap: 0.6rem;
+    margin-block: 1.1rem 1.35rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .service-card__features li {
+    position: relative;
+    padding-left: 1.25rem;
+    color: var(--color-text);
+    font-size: 0.91rem;
+    line-height: 1.55;
+  }
+
+  .service-card__features li::before {
+    position: absolute;
+    top: 0.58em;
+    left: 0;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--color-blue);
+    content: "";
+  }
+
+  .service-card__content > .text-link {
+    display: inline-block;
+    margin-top: 1.05rem;
+  }
+
+  .service-card--detailed {
+    height: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .service-card {
+      transition: none;
+    }
+  }
+</style>

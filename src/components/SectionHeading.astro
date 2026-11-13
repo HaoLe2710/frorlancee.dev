@@ -1,0 +1,47 @@
+---
+interface Props {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  compact?: boolean;
+}
+
+const { eyebrow, title, description, compact = false } = Astro.props;
+---
+
+<header class:list={["section-heading", compact && "section-heading--compact"]}>
+  {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+  <h2>{title}</h2>
+  {description && <p class="section-heading__description">{description}</p>}
+</header>
+
+<style>
+  .section-heading {
+    max-width: 48rem;
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .section-heading h2 {
+    max-width: 15ch;
+    font-size: clamp(2rem, 4vw, 3.35rem);
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+    color: var(--color-navy);
+  }
+
+  .section-heading__description {
+    max-width: 44rem;
+    margin-top: 1rem;
+    color: var(--color-muted);
+    font-size: clamp(1rem, 1.35vw, 1.12rem);
+    line-height: 1.75;
+  }
+
+  .section-heading--compact {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-heading--compact h2 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+  }
+</style>

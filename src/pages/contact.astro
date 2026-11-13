@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import EmptyState from "../components/EmptyState.astro";
+import { getVisibleContactLinks, isExternalHref } from "../lib/content";
+
+const links = await getVisibleContactLinks();
+---
+
+<Base title="Liên hệ" description="Trao đổi với Frorlancee Dev về website, ứng dụng di động, phần mềm quản lý hoặc công cụ tự động hóa.">
+  <main class="shell contact-page">
+    <header class="contact-header">
+      <p class="eyebrow">Liên hệ</p>
+      <h1>Cùng làm rõ bài toán của bạn.</h1>
+      <p>Nếu bạn đang cần xây dựng hoặc cải thiện một sản phẩm số, hãy chọn kênh liên hệ được công bố bên dưới và chia sẻ mục tiêu, người dùng cùng thời gian dự kiến.</p>
+    </header>
+
+    {links.length > 0 ? <div class="contact-grid">
+      {links.map((link) => <a class="contact-card" href={link.href} target={isExternalHref(link.href) ? "_blank" : undefined} rel={isExternalHref(link.href) ? "noopener noreferrer" : undefined}>
+        <span class="contact-type">{link.type === "email" ? "Email" : "Kênh liên hệ"}</span>
+        <strong>{link.label}</strong>
+        {link.value && <span class="contact-value">{link.value}</span>}
+        <span class="contact-arrow" aria-hidden="true">↗</span>
+      </a>)}
+    </div> : <EmptyState title="Chưa có kênh liên hệ công khai" description="Thông tin liên hệ sẽ được đăng ở đây khi được cấu hình trong CMS." />}
+  </main>
+</Base>
+
+<style>
+  .contact-page { padding-block: clamp(3.75rem, 7vw, 6rem) 7rem; }
+  .contact-header { max-width: 54rem; margin-bottom: 2.8rem; }
+  .contact-header h1 { max-width: 14ch; margin-top: .7rem; color: var(--color-navy); font-size: clamp(2.8rem, 6vw, 5rem); line-height: 1.04; letter-spacing: -.06em; }
+  .contact-header > p:last-child { max-width: 45rem; margin-top: 1.2rem; color: var(--color-muted); font-size: 1.08rem; line-height: 1.75; }
+  .contact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .contact-card { position: relative; display: flex; min-height: 10rem; flex-direction: column; align-items: flex-start; justify-content: center; gap: .55rem; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: 1rem; color: inherit; background: #fff; text-decoration: none; transition: border-color 150ms ease, transform 150ms ease; }
+  .contact-card:hover, .contact-card:focus-visible { transform: translateY(-2px); border-color: var(--color-blue); }
+  .contact-type, .contact-value { color: var(--color-muted); font-size: .85rem; }
+  .contact-card strong { color: var(--color-navy); font-size: 1.3rem; }
+  .contact-arrow { position: absolute; top: 1.35rem; right: 1.45rem; color: var(--color-blue); font-size: 1.2rem; }
+  @media (max-width: 650px) { .contact-grid { grid-template-columns: 1fr; } }
+</style>

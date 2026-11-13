@@ -1,0 +1,186 @@
+---
+import { Image } from "emdash/ui";
+import type { MediaValue } from "emdash";
+
+interface Props {
+  title: string;
+  summary: string;
+  href: string;
+  category: string;
+  coverImage?: MediaValue | null;
+  featured?: boolean;
+  className?: string;
+}
+
+const { title, summary, href, category, coverImage, featured = false, className } = Astro.props;
+const categoryLabels: Record<string, string> = {
+  website: "Website",
+  mobile_app: "Mobile App",
+  custom_software: "Custom Software",
+  automation_tool: "Automation Tool",
+};
+---
+
+<article class:list={["project-card", className]} data-project-category={category}>
+  <a href={href} class="project-card__link" aria-label={`Xem dự án: ${title}`}>
+    <div class="project-card__visual">
+      {coverImage ? (
+        <Image image={coverImage} />
+      ) : (
+        <div class="project-card__fallback" aria-hidden="true">
+          <span class="project-card__fallback-mark">FD</span>
+          <span class="project-card__fallback-line"></span>
+          <span class="project-card__fallback-line project-card__fallback-line--short"></span>
+          <span class="project-card__fallback-node"></span>
+        </div>
+      )}
+      {featured && <span class="project-card__featured">Nổi bật</span>}
+    </div>
+    <div class="project-card__body">
+      <div class="project-card__meta">
+        <span>{categoryLabels[category] ?? category}</span>
+        {featured && <span aria-hidden="true">·</span>}
+        {featured && <span>Dự án tiêu biểu</span>}
+      </div>
+      <h3 class="project-card__title">{title}</h3>
+      <p class="project-card__summary">{summary}</p>
+      <span class="text-link">Xem dự án<span aria-hidden="true"> →</span></span>
+    </div>
+  </a>
+</article>
+
+<style>
+  .project-card {
+    min-width: 0;
+  }
+
+  .project-card__link {
+    display: grid;
+    gap: 1.15rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .project-card__visual {
+    position: relative;
+    display: grid;
+    overflow: hidden;
+    aspect-ratio: 1.32;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, #f8fafc, #eff7fc);
+  }
+
+  .project-card__visual :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 220ms ease;
+  }
+
+  .project-card__link:hover .project-card__visual :global(img),
+  .project-card__link:focus-visible .project-card__visual :global(img) {
+    transform: scale(1.025);
+  }
+
+  .project-card__fallback {
+    position: relative;
+    display: flex;
+    width: 70%;
+    max-width: 22rem;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.2rem;
+    border: 1px solid rgb(11 30 53 / 12%);
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 88%);
+    box-shadow: 0 16px 35px rgb(11 30 53 / 8%);
+    transform: rotate(-3deg);
+  }
+
+  .project-card__fallback-mark {
+    color: var(--color-navy);
+    font-size: 0.75rem;
+    font-weight: 750;
+  }
+
+  .project-card__fallback-line {
+    display: block;
+    height: 0.55rem;
+    border-radius: 99px;
+    background: rgb(0 168 245 / 18%);
+  }
+
+  .project-card__fallback-line--short {
+    width: 64%;
+    background: rgb(11 30 53 / 10%);
+  }
+
+  .project-card__fallback-node {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    width: 2rem;
+    height: 2rem;
+    border: 0.35rem solid white;
+    border-radius: 50%;
+    background: var(--color-blue);
+    box-shadow: 0 0 0 1px rgb(0 168 245 / 25%);
+  }
+
+  .project-card__featured {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.42rem 0.7rem;
+    border-radius: 99px;
+    color: var(--color-navy);
+    background: white;
+    font-size: 0.72rem;
+    font-weight: 650;
+  }
+
+  .project-card__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .project-card__meta {
+    display: flex;
+    gap: 0.45rem;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+  }
+
+  .project-card__title {
+    margin-top: 0.5rem;
+    color: var(--color-navy);
+    font-size: 1.35rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    transition: color 160ms ease;
+  }
+
+  .project-card__link:hover .project-card__title,
+  .project-card__link:focus-visible .project-card__title {
+    color: #007fc0;
+  }
+
+  .project-card__summary {
+    margin-top: 0.45rem;
+    color: var(--color-muted);
+    line-height: 1.65;
+  }
+
+  .project-card__body .text-link {
+    margin-top: 0.85rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-card__visual :global(img) {
+      transition: none;
+    }
+  }
+</style>

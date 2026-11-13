@@ -1,0 +1,21 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Không tìm thấy trang" description="Trang bạn đang tìm không tồn tại hoặc đã được chuyển đến địa chỉ khác.">
+  <section class="shell not-found">
+    <p class="not-found-code" aria-hidden="true">404</p>
+    <p class="eyebrow">Không tìm thấy trang</p>
+    <h1>Địa chỉ này không có nội dung.</h1>
+    <p>Trang có thể đã được chuyển hoặc địa chỉ bạn nhập chưa chính xác.</p>
+    <div class="not-found-links"><a class="button button--primary" href="/">Về trang chủ</a><a class="button button--secondary" href="/projects">Xem dự án</a></div>
+  </section>
+</Base>
+
+<style>
+  .not-found { display: grid; min-height: 30rem; place-content: center; justify-items: start; padding-block: 4rem 6rem; }
+  .not-found-code { color: rgb(0 168 245 / 15%); font-size: clamp(6rem, 20vw, 12rem); font-weight: 800; line-height: .8; letter-spacing: -.09em; }
+  .not-found h1 { max-width: 16ch; margin-top: 1rem; color: var(--color-navy); font-size: clamp(2rem, 5vw, 3.3rem); line-height: 1.08; letter-spacing: -.05em; }
+  .not-found > p:not(.eyebrow, .not-found-code) { margin-top: .9rem; color: var(--color-muted); line-height: 1.7; }
+  .not-found-links { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.5rem; }
+</style>

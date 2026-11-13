@@ -1,0 +1,122 @@
+---
+import { Image } from "emdash/ui";
+import type { MediaValue } from "emdash";
+import { formatDate } from "../lib/content";
+
+interface Props {
+  title: string;
+  excerpt?: string | null;
+  href: string;
+  publishedAt?: Date | string | null;
+  coverImage?: MediaValue | null;
+  category?: string;
+}
+
+const { title, excerpt, href, publishedAt, coverImage, category } = Astro.props;
+const formattedDate = formatDate(publishedAt);
+---
+
+<article class="article-card">
+  <a href={href} class="article-card__link" aria-label={`Đọc bài viết: ${title}`}>
+    <div class="article-card__visual">
+      {coverImage ? (
+        <Image image={coverImage} />
+      ) : (
+        <div class="article-card__fallback" aria-hidden="true">
+          <span class="article-card__rule"></span>
+          <span class="article-card__rule article-card__rule--short"></span>
+          <span class="article-card__rule"></span>
+          <span class="article-card__rule article-card__rule--shorter"></span>
+        </div>
+      )}
+    </div>
+    <div class="article-card__body">
+      <div class="article-card__meta">
+        {category && <span>{category}</span>}
+        {formattedDate && <time datetime={publishedAt instanceof Date ? publishedAt.toISOString() : new Date(publishedAt!).toISOString()}>{formattedDate}</time>}
+      </div>
+      <h3>{title}</h3>
+      {excerpt && <p>{excerpt}</p>}
+      <span class="text-link">Đọc bài viết<span aria-hidden="true"> →</span></span>
+    </div>
+  </a>
+</article>
+
+<style>
+  .article-card__link {
+    display: grid;
+    gap: 1.1rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .article-card__visual {
+    display: grid;
+    overflow: hidden;
+    aspect-ratio: 1.45;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 1.15rem;
+    background: var(--color-surface);
+  }
+
+  .article-card__visual :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .article-card__fallback {
+    display: flex;
+    width: 56%;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: white;
+  }
+
+  .article-card__rule {
+    height: 0.45rem;
+    border-radius: 99px;
+    background: rgb(11 30 53 / 12%);
+  }
+
+  .article-card__rule--short {
+    width: 66%;
+    background: rgb(0 168 245 / 40%);
+  }
+
+  .article-card__rule--shorter {
+    width: 45%;
+  }
+
+  .article-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+  }
+
+  .article-card__body h3 {
+    margin-top: 0.55rem;
+    color: var(--color-navy);
+    font-size: 1.3rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+
+  .article-card__body p:not(.text-link) {
+    margin-top: 0.45rem;
+    color: var(--color-muted);
+    line-height: 1.65;
+  }
+
+  .article-card__body .text-link {
+    display: inline-block;
+    margin-top: 0.85rem;
+  }
+</style>

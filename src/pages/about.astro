@@ -1,0 +1,64 @@
+---
+import { getEmDashEntry, getSeoMeta } from "emdash";
+import { PortableText } from "emdash/ui";
+import Base from "../layouts/Base.astro";
+
+const { entry: page, error, cacheHint } = await getEmDashEntry("pages", "about");
+if (error) console.error("Unable to load the about page.");
+if (!page) return Astro.rewrite("/404");
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const seo = getSeoMeta(page, {
+  siteUrl: Astro.url.origin,
+  path: "/about",
+  defaultDescription: page.data.summary || "Tìm hiểu cách Frorlancee Dev xây dựng sản phẩm số theo nhu cầu thực tế.",
+});
+const approachPoints = page.data.approach_points ?? [];
+---
+
+<Base
+  title={seo.title}
+  pageTitle={seo.ogTitle}
+  description={seo.description}
+  image={seo.ogImage}
+  canonical={seo.canonical}
+  robots={seo.robots}
+  content={{ collection: "pages", id: page.data.id, slug: "about" }}
+>
+  <article class="shell about-page">
+    <header class="about-header">
+      <p class="eyebrow">Về chúng tôi</p>
+      <h1>{page.data.title}</h1>
+      {page.data.summary && <p class="about-summary">{page.data.summary}</p>}
+    </header>
+
+    {page.data.content && <div class="rich-content" {...page.edit.content}><PortableText value={page.data.content} /></div>}
+
+    {approachPoints.length > 0 && (
+      <section class="approach" aria-labelledby="approach-heading">
+        <h2 id="approach-heading">Nguyên tắc làm việc</h2>
+        <div class="approach-grid">
+          {approachPoints.map((point) => <article><h3>{point.title}</h3><p>{point.detail}</p></article>)}
+        </div>
+      </section>
+    )}
+  </article>
+</Base>
+
+<style>
+  .about-page { padding-block: clamp(3.75rem, 7vw, 6rem) clamp(4rem, 8vw, 7rem); }
+  .about-header { max-width: 54rem; margin-bottom: 2.5rem; }
+  .about-header h1 { max-width: 15ch; margin-top: .7rem; color: var(--color-navy); font-size: clamp(2.8rem, 6vw, 5rem); line-height: 1.04; letter-spacing: -.06em; }
+  .about-summary { max-width: 48rem; margin-top: 1.25rem; color: var(--color-muted); font-size: 1.1rem; line-height: 1.75; }
+  .rich-content { max-width: 53rem; color: var(--color-text); font-size: 1.04rem; line-height: 1.85; }
+  .rich-content :global(p) { margin-block: 0 1.25em; }
+  .rich-content :global(h2) { margin-block: 2em .7em; color: var(--color-navy); font-size: 1.7rem; letter-spacing: -.035em; }
+  .rich-content :global(a) { color: var(--color-blue); text-underline-offset: .2em; }
+  .approach { margin-top: 3.5rem; padding-top: 2.5rem; border-top: 1px solid var(--color-border); }
+  .approach > h2 { color: var(--color-navy); font-size: 1.7rem; letter-spacing: -.035em; }
+  .approach-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .approach-grid article { padding: 1.35rem; border: 1px solid var(--color-border); border-radius: 1rem; background: #fff; }
+  .approach-grid h3 { color: var(--color-navy); font-size: 1.05rem; }
+  .approach-grid p { margin-top: .55rem; color: var(--color-muted); line-height: 1.7; }
+  @media (max-width: 760px) { .approach-grid { grid-template-columns: 1fr; } }
+</style>

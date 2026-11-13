@@ -1,0 +1,113 @@
+---
+import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import ContactCTA from "../../components/ContactCTA.astro";
+import ProjectCard from "../../components/ProjectCard.astro";
+import { getVisibleContactLinks, safeExternalUrl } from "../../lib/content";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) return Astro.rewrite("/404");
+
+const [{ entry: project, error, cacheHint }, relatedResult, contactLinks] = await Promise.all([
+  getEmDashEntry("projects", slug),
+  getEmDashCollection("projects", { limit: 4, orderBy: { published_at: "desc" } }),
+  getVisibleContactLinks(),
+]);
+if (error) console.error("Unable to load public project.");
+if (!project) return Astro.rewrite("/404");
+if (Astro.cache?.enabled) {
+  Astro.cache.set(cacheHint);
+  Astro.cache.set(relatedResult.cacheHint);
+}
+
+const related = relatedResult.entries.filter((item) => item.id !== project.id).slice(0, 3);
+const gallery = project.data.gallery ?? [];
+const features = project.data.features ?? [];
+const technology = project.data.tech_stack ?? [];
+const categoryLabels: Record<string, string> = {
+  website: "Website",
+  mobile_app: "Mobile App",
+  custom_software: "Custom Software",
+  automation_tool: "Automation Tool",
+};
+const category = categoryLabels[project.data.category] ?? project.data.category;
+const demoUrl = safeExternalUrl(project.data.demo_url);
+const repositoryUrl = safeExternalUrl(project.data.repository_url);
+const seo = getSeoMeta(project, {
+  siteUrl: Astro.url.origin,
+  path: `/projects/${slug}`,
+  defaultDescription: project.data.summary,
+  defaultOgImage: project.data.cover_image?.src,
+});
+---
+
+<Base
+  title={seo.title}
+  pageTitle={seo.ogTitle}
+  description={seo.description}
+  image={seo.ogImage}
+  canonical={seo.canonical}
+  robots={seo.robots}
+  type="article"
+  content={{ collection: "projects", id: project.data.id, slug }}
+>
+  <article class="shell project-detail">
+    <Breadcrumbs items={[{ label: "Dự án", href: "/projects" }, { label: project.data.title }]} />
+    <header class="project-header">
+      <p class="eyebrow">{category}</p>
+      <h1 {...project.edit.title}>{project.data.title}</h1>
+      <p class="project-summary" {...project.edit.summary}>{project.data.summary}</p>
+      <div class="project-links">
+        {demoUrl && <a class="button button--secondary project-live" href={demoUrl} target="_blank" rel="noopener noreferrer" {...project.edit.demo_url}>Xem demo<span aria-hidden="true"> ↗</span></a>}
+        {repositoryUrl && <a class="button button--secondary project-live" href={repositoryUrl} target="_blank" rel="noopener noreferrer" {...project.edit.repository_url}>Mã nguồn công khai<span aria-hidden="true"> ↗</span></a>}
+      </div>
+    </header>
+
+    {project.data.cover_image && <figure class="project-cover" {...project.edit.cover_image}><Image image={project.data.cover_image} /></figure>}
+
+    <div class="project-sections">
+      {project.data.problem && <section><h2>Bài toán</h2><p>{project.data.problem}</p></section>}
+      {project.data.solution && <section><h2>Giải pháp</h2><p>{project.data.solution}</p></section>}
+      {features.length > 0 && <section><h2>Tính năng</h2><ul>{features.map((feature) => <li>{feature.label}</li>)}</ul></section>}
+      {technology.length > 0 && <section><h2>Công nghệ</h2><ul class="tech-list">{technology.map((item) => <li>{item.name}</li>)}</ul></section>}
+      {project.data.result && <section><h2>Kết quả / tình trạng bàn giao</h2><p>{project.data.result}</p></section>}
+      {project.data.description && <section class="project-rich-content" {...project.edit.description}><h2>Thông tin chi tiết</h2><PortableText value={project.data.description} /></section>}
+    </div>
+
+    {gallery.length > 0 && <div class="project-gallery" {...project.edit.gallery}>
+      {gallery.map((item) => <figure><Image image={item.image} />{item.caption && <figcaption>{item.caption}</figcaption>}</figure>)}
+    </div>}
+  </article>
+
+  {related.length > 0 && <section class="related-projects"><div class="shell"><h2>Dự án khác</h2><div class="projects-grid">{related.map((item) => <ProjectCard title={item.data.title} summary={item.data.summary} href={`/projects/${item.id}`} category={item.data.category} coverImage={item.data.cover_image} featured={item.data.featured} />)}</div></div></section>}
+  <ContactCTA heading="Bạn đang có một bài toán tương tự?" description="Trao đổi mục tiêu và phạm vi để cùng xác định hướng triển khai phù hợp." links={contactLinks} />
+</Base>
+
+<style>
+  .project-detail { padding-block: 2rem 5rem; }
+  .project-header { max-width: 54rem; padding-block: 3.5rem 2.5rem; }
+  .project-header h1 { margin-top: .65rem; color: var(--color-navy); font-size: clamp(2.8rem, 7vw, 5.4rem); line-height: 1.02; letter-spacing: -.065em; }
+  .project-summary { max-width: 47rem; margin-top: 1.2rem; color: var(--color-muted); font-size: 1.15rem; line-height: 1.75; }
+  .project-links { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.4rem; }
+  .project-live { display: inline-flex; }
+  .project-cover { overflow: hidden; margin: 0; border: 1px solid var(--color-border); border-radius: 1.35rem; background: var(--color-surface); }
+  .project-cover :global(img) { display: block; width: 100%; max-height: 48rem; object-fit: cover; }
+  .project-sections { display: grid; max-width: 52rem; gap: 2.2rem; margin: 3.5rem auto 0; }
+  .project-sections h2 { margin-bottom: .65rem; color: var(--color-navy); font-size: 1.45rem; letter-spacing: -.035em; }
+  .project-sections p, .project-sections li { color: var(--color-muted); font-size: 1rem; line-height: 1.8; }
+  .project-sections ul { display: grid; gap: .45rem; padding-left: 1.25rem; }
+  .tech-list { display: flex !important; flex-wrap: wrap; gap: .6rem !important; padding: 0 !important; list-style: none; }
+  .tech-list li { padding: .4rem .7rem; border: 1px solid var(--color-border); border-radius: 99px; background: #fff; font-size: .84rem; }
+  .project-rich-content :global(p) { margin-block: 0 1em; }
+  .project-rich-content :global(h2), .project-rich-content :global(h3) { margin-block: 1.6em .65em; }
+  .project-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 3rem; }
+  .project-gallery figure { margin: 0; overflow: hidden; border-radius: 1rem; background: var(--color-surface); }
+  .project-gallery :global(img) { display: block; width: 100%; height: 100%; max-height: 38rem; object-fit: cover; }
+  .project-gallery figcaption { padding: .75rem 1rem; color: var(--color-muted); font-size: .85rem; }
+  .related-projects { padding-block: 3.5rem 5rem; background: var(--color-surface); }
+  .related-projects h2 { margin-bottom: 1.5rem; color: var(--color-navy); font-size: 1.8rem; }
+  .projects-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+  @media (max-width: 760px) { .project-gallery, .projects-grid { grid-template-columns: 1fr; } }
+</style>
