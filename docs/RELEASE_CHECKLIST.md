@@ -53,7 +53,7 @@ Không xóa dữ liệu người dùng hiện có. Nếu cần xóa dữ liệu 
 
 - [ ] Kết nối `HaoLe2710/frorlancee.dev` với Worker `frorlancee-website`.
 - [ ] Nếu repo không có trong selector Cloudflare, cấp GitHub App `Cloudflare Workers and Pages` quyền chỉ trên repository này; không cấp toàn bộ repositories.
-- [ ] Đặt production branch `main`, thư mục gốc repository, install command `pnpm install --frozen-lockfile`, build command `pnpm typecheck && pnpm build`, deploy command `pnpm exec wrangler deploy --config dist/server/wrangler.json`.
+- [ ] Đặt production branch `main`, thư mục gốc repository, build command `pnpm typecheck && pnpm build`, deploy command `pnpm exec wrangler deploy --config dist/server/wrangler.json`; để Workers Builds tự cài dependencies từ `pnpm-lock.yaml` và xác nhận `packageManager` ghim `pnpm@11.9.0`.
 - [ ] Giữ `previews_enabled: false`; xác nhận không có Preview deployment/URL.
 - [ ] Chỉ để commit `main` tự deploy sau khi review source diff và Build settings.
 

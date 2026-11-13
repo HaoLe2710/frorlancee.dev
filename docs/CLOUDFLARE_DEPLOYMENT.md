@@ -79,7 +79,7 @@ Sau khi production Worker tồn tại, kết nối repository `HaoLe2710/frorlan
 
 - Production branch: `main`
 - Root directory: repository root
-- Install command: `pnpm install --frozen-lockfile`
+- Dependency installation: Workers Builds detects `pnpm-lock.yaml`; `package.json` pins `pnpm@11.9.0` (there is no install-command field in this Worker Builds form).
 - Build command: `pnpm typecheck && pnpm build`
 - Deploy command: `pnpm exec wrangler deploy --config dist/server/wrangler.json`
 - Preview builds: **disabled** (`previews_enabled: false`); không tạo Preview deployment/URL.
