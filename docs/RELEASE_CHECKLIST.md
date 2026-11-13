@@ -11,16 +11,17 @@ Triển khai thẳng production; không tạo staging hoặc preview deployment.
 - [x] `pnpm typecheck` thành công (Node.js 22.23.4 x64; 30 files, 0 errors/warnings/hints).
 - [x] `pnpm build` thành công (còn cảnh báo chunk client/admin lớn).
 - [x] Wrangler production dry run thành công với `dist/server/wrangler.json`; output có đúng D1/R2/KV/Images/Assets bindings.
-- [ ] Deployment Worker production hiển thị trên Cloudflare.
-- [ ] Cài production-only `EMDASH_ENCRYPTION_KEY` bằng Wrangler secret và lưu bản khôi phục riêng ngoài Git.
+- [x] Deployment Worker production hiển thị trên Cloudflare; version hiện tại `6828e1c1-463f-46c3-8867-2d2e576889b0`.
+- [x] Cài production-only `EMDASH_ENCRYPTION_KEY` bằng Wrangler secret; giá trị không xuất hiện trong source/log.
 
 ## Sau deploy, trước khi owner setup
 
-- [ ] Custom Domain `frorlanceedev.id.vn` Active và HTTPS hợp lệ.
-- [ ] Worker settings có D1 `DB`, R2 `MEDIA`, KV `SESSION`, Astro `IMAGES`/`ASSETS`.
-- [ ] Không có `workers.dev`, Version URL hoặc Preview URL có thể đi vòng qua Access.
-- [ ] Request ẩn danh tới `/` và `/_emdash/admin/setup` bị Cloudflare Access chặn hoặc chuyển tới login trước khi đến EmDash.
-- [ ] Xác nhận production `EMDASH_SITE_URL` là `https://frorlanceedev.id.vn`.
+- [x] Custom Domain `frorlanceedev.id.vn` enabled, DNS phân giải, HTTPS/TLS hợp lệ.
+- [x] Worker version có D1 `DB`, R2 `MEDIA`, KV `SESSION`, Astro `IMAGES`/`ASSETS`.
+- [x] Không có URL Worker bỏ qua Access: `workers.dev` tắt, Preview URLs tắt, Custom Domain duy nhất, zone không có Workers route khác.
+- [x] Request HEAD ẩn danh tới `/` và `/_emdash/admin/setup` chuyển tới Cloudflare Access login trước khi vào EmDash.
+- [x] Production `EMDASH_SITE_URL` là `https://frorlanceedev.id.vn`.
+- [ ] Owner lưu bản khôi phục độc lập của encryption key trong password/secret manager.
 
 ## Owner: tạo Admin đầu tiên
 
@@ -51,6 +52,7 @@ Không xóa dữ liệu người dùng hiện có. Nếu cần xóa dữ liệu 
 ## GitHub Workers Builds
 
 - [ ] Kết nối `HaoLe2710/frorlancee.dev` với Worker `frorlancee-website`.
+- [ ] Nếu repo không có trong selector Cloudflare, cấp GitHub App `Cloudflare Workers and Pages` quyền chỉ trên repository này; không cấp toàn bộ repositories.
 - [ ] Đặt production branch `main`, thư mục gốc repository, install command `pnpm install --frozen-lockfile`, build command `pnpm typecheck && pnpm build`, deploy command `pnpm exec wrangler deploy --config dist/server/wrangler.json`.
 - [ ] Giữ `previews_enabled: false`; xác nhận không có Preview deployment/URL.
 - [ ] Chỉ để commit `main` tự deploy sau khi review source diff và Build settings.

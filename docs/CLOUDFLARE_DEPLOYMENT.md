@@ -11,11 +11,13 @@ Ngày ghi nhận: **2026-11-13**. Dự án triển khai thẳng production; khô
 | D1 | Đã tạo `frorlancee-db`, ID `ef7bb509-01a5-43ed-a39d-23afb2348f94`; `read_replication.mode=disabled` (không bật replica hoặc nâng cấp dịch vụ). |
 | R2 | Đã tạo bucket private `frorlancee-media`, storage class Standard. Chưa bật public bucket domain. |
 | KV phiên Astro | Đã tạo namespace `SESSION`, ID `09eb75a300c849e79788e9718b4fc9f6`. |
-| Worker / Custom Domain | Chưa triển khai tại thời điểm ghi nhận này. Wrangler sẽ gắn Worker `frorlancee-website` vào Custom Domain trong lần deploy production đầu tiên. |
-| Secret production | Đã sinh key production riêng; chưa cài vào Worker. Bản recovery local được DPAPI bảo vệ trong `.wrangler/secrets/emdash-production-key.dpapi` (ignored, gắn với Windows user/máy hiện tại); owner cần lưu thêm bản độc lập trong password/secret manager trước khi lưu plugin credentials. Key local trong `.env` không dùng chung cho production. |
+| Worker / Custom Domain | PASS — Worker `frorlancee-website` đang chạy trên Custom Domain `frorlanceedev.id.vn`; bản hiện tại `6828e1c1-463f-46c3-8867-2d2e576889b0` (Secret Change sau deploy `8478eb7c-0154-4117-a6a3-ea0e7019cf0e`). Mã nguồn production tương ứng commit `f5d253d19bbcafb57a817bc88ac7d85c52b775aa` trên `main`. |
+| Secret production | PASS — `EMDASH_ENCRYPTION_KEY` đã cài bằng Wrangler Secret; chỉ xác minh tên và loại `secret_text`, không đọc giá trị. Bản phục hồi local được DPAPI bảo vệ tại `.wrangler/secrets/emdash-production-key.dpapi` (ignored, gắn với Windows user/máy hiện tại). Owner còn cần lưu bản khôi phục độc lập trong password/secret manager trước khi lưu plugin credentials. Key local trong `.env` không dùng chung cho production. |
+| HTTPS và Access runtime | PASS — TLS hợp lệ; request HTTPS ẩn danh tới `/` và `/_emdash/admin/setup` đều trả `302` tới Cloudflare Access login. Không theo redirect và không gửi Access cookie. |
+| URL có thể truy cập Worker | PASS — Custom Domain duy nhất của Worker là `frorlanceedev.id.vn`; `workers.dev` và Worker Preview URLs đều tắt; zone không có Workers route nào khác. |
 | GitHub Workers Builds | Chưa kết nối. Mục dưới đây ghi cấu hình yêu cầu cho `main`, tắt preview builds. |
 
-Không deploy nếu Access app/policy thay đổi, hostname bị bỏ khỏi app, hoặc policy xuất hiện Bypass. Owner hoàn tất Setup Wizard và đăng ký passkey thật trên domain sau khi Worker, HTTPS, Access và secret đã sẵn sàng.
+Access app/policy hiện đã được xác minh: hostname gốc không giới hạn path; policy duy nhất là Allow với Include Email của owner, không gắn Bypass. Giữ Access bật cho tới khi owner tạo Admin/passkey và các kiểm tra CMS hoàn tất. Chưa mở website công khai.
 
 ## Binding và hostname
 
@@ -60,16 +62,16 @@ Dùng một production key riêng, đúng định dạng EmDash `emdash_enc_v1_`
 pnpm exec wrangler secret list --config dist/server/wrangler.json
 ```
 
-## Kiểm tra sau deploy
+## Kết quả kiểm tra sau deploy
 
-1. `wrangler deployments list --name frorlancee-website` cho thấy deployment mới.
-2. Dashboard Worker Domains/Routes cho thấy duy nhất Custom Domain `frorlanceedev.id.vn`; không có `workers.dev` route.
-3. Kiểm tra TLS/HTTPS và DNS của hostname.
-4. Kiểm tra remote Worker settings/bindings: D1 `DB`, R2 `MEDIA`, KV `SESSION`, Astro `IMAGES`/`ASSETS`; không chỉ dựa vào `wrangler.jsonc`.
-5. Gửi request chưa đăng nhập đến `/` và `/_emdash/admin/setup`. Cloudflare Access phải từ chối hoặc chuyển sang Access login; không được trả về EmDash Setup Wizard trước xác thực. Ghi nhận status/headers, không lưu Access cookie.
-6. Chỉ owner đi qua Access bằng email được policy cho phép, sau đó tạo Admin/passkey trên hostname production.
+1. Wrangler deployments/versions API xác nhận deployment mới; version hiện tại là `6828e1c1-463f-46c3-8867-2d2e576889b0` sau khi cài secret.
+2. Cloudflare Worker Domains API trả đúng một Custom Domain cho Worker: `frorlanceedev.id.vn`, enabled; `previews_enabled=false`. Script subdomain API xác nhận `workers_dev_enabled=false` và `worker_previews_enabled=false`; zone Workers Routes API trả 0 route.
+3. DNS phân giải và HTTPS trả lời với TLS validation thành công; Custom Domain được bật và Cloudflare cấp certificate.
+4. Version API xác nhận binding D1 `DB` → `ef7bb509-01a5-43ed-a39d-23afb2348f94`, R2 `MEDIA` → `frorlancee-media`, KV `SESSION` → `09eb75a300c849e79788e9718b4fc9f6`, cùng `IMAGES`, `ASSETS`, `EMDASH_SITE_URL` và secret `EMDASH_ENCRYPTION_KEY`.
+5. Request HEAD ẩn danh, không cookie, tới `/` và `/_emdash/admin/setup` đều nhận `302` tới Cloudflare Access login. Setup Wizard không được trả về cho request chưa xác thực.
+6. Owner chưa đăng nhập để tạo Admin. Hướng dẫn setup bên dưới áp dụng sau khi owner sẵn sàng; website tiếp tục nằm sau Access.
 
-Nếu domain/TLS chưa sẵn sàng, binding sai, request ẩn danh tới được EmDash, hoặc Access policy không đúng, dừng và sửa trước khi owner chạy Setup Wizard.
+Chưa có kiểm tra runtime đã xác thực bằng tài khoản owner. Không chạy Setup Wizard cho tới khi owner truy cập theo hướng dẫn sau đây; không tắt Access trước khi CMS checks hoàn tất.
 
 ## GitHub Workers Builds
 
@@ -83,6 +85,8 @@ Sau khi production Worker tồn tại, kết nối repository `HaoLe2710/frorlan
 - Preview builds: **disabled** (`previews_enabled: false`); không tạo Preview deployment/URL.
 
 Sau kết nối, đọc lại Build settings và xác nhận GitHub repository, branch, commands và preview state. Chỉ push `main` sau khi review diff/checks vì commit production sẽ tự deploy. Không bật GitHub PR previews.
+
+Nếu `HaoLe2710/frorlancee.dev` không xuất hiện trong danh sách repo của Cloudflare, cập nhật quyền cài đặt GitHub App **Cloudflare Workers and Pages** để cấp quyền chỉ cho repo này; không chọn toàn bộ repository. Kết nối repo và tạo build token sẽ cho phép Cloudflare đọc source/build đầu vào và deploy Worker theo các lệnh đã cấu hình.
 
 ## Tham khảo
 

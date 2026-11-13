@@ -8,8 +8,9 @@
 - [x] The app has one attached policy: `Frorlancee Owner Only`, action `Allow`, one Include Email rule for the owner. No Bypass policy is attached.
 - [x] R2 bucket is private; no public bucket domain is configured.
 - [x] Wrangler configuration disables `workers.dev` and Preview/Version URLs.
-- [ ] Confirm after deployment that anonymous `/` and `/_emdash/admin/setup` requests are stopped by Access before they reach EmDash.
-- [ ] Set a production-only `EMDASH_ENCRYPTION_KEY` with `wrangler secret put`; record a separate recovery copy in the owner's password/secret manager.
+- [x] Confirm anonymous `/` and `/_emdash/admin/setup` requests are stopped by Access before EmDash (both return a Cloudflare Access login redirect).
+- [x] Set production-only `EMDASH_ENCRYPTION_KEY` using Wrangler Secret; its value is never emitted in logs or source.
+- [ ] Owner records an independent recovery copy of the encryption key in the password/secret manager before saving plugin credentials.
 - [ ] Owner creates the first EmDash Admin and registers a real passkey on `https://frorlanceedev.id.vn`.
 - [ ] Verify sign-in, role permissions, content updates, Site Settings, and media upload before changing public access.
 
