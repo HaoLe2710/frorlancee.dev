@@ -1,67 +1,69 @@
-# EmDash Portfolio Template (Cloudflare)
+# Frorlancee Dev
 
-A visual portfolio for showcasing creative work, built with [EmDash](https://github.com/emdash-cms/emdash) and deployed on Cloudflare Workers with D1 and R2. Project pages with tag filtering, case study layouts, and an RSS feed for new work.
+Website giới thiệu dịch vụ và dự án Frorlancee Dev, với CMS EmDash để quản lý dự án, bài viết, dịch vụ và nội dung trang.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/emdash-cms/templates/tree/main/portfolio-cloudflare)
+Astro render các trang public trên Cloudflare Workers. EmDash cung cấp mô hình nội dung và giao diện quản trị.
 
-![Portfolio template work page](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/portfolio/latest/work-light-desktop.jpg)
+## Production
 
-## What's Included
+- Domain: [https://frorlanceedev.id.vn](https://frorlanceedev.id.vn)
+- Worker: `frorlancee-website`
+- D1: `frorlancee-db` (`ef7bb509-01a5-43ed-a39d-23afb2348f94`)
+- R2: `frorlancee-media` (bucket private)
+- Astro session KV: `SESSION` (`09eb75a300c849e79788e9718b4fc9f6`)
+- Cloudflare Access đang bảo vệ hostname trong giai đoạn owner tạo Admin đầu tiên và xác minh CMS.
+- `workers.dev` và preview/version URL đã tắt.
 
-- Project grid with hover effects
-- Tag-based filtering on the work page
-- Individual project pages with galleries
-- About and contact pages
-- RSS feed for new projects
-- SEO metadata and JSON-LD
-- Dark/light mode
+Xem [hướng dẫn triển khai](docs/CLOUDFLARE_DEPLOYMENT.md), [security checklist](docs/SECURITY_CHECKLIST.md), và [release checklist](docs/RELEASE_CHECKLIST.md). Không mở website công khai trước khi release checklist hoàn tất.
 
-## Pages
+## Các trang
 
-| Page | Route |
+| Trang | Route |
 |---|---|
-| Homepage | `/` |
-| Work listing | `/work` |
-| Single project | `/work/:slug` |
-| About | `/about` |
-| Contact | `/contact` |
+| Trang chủ | `/` |
+| Dịch vụ | `/services` |
+| Dự án | `/projects` và `/projects/:slug` |
+| Bài viết | `/blog` và `/blog/:slug` |
+| Giới thiệu | `/about` |
+| Liên hệ | `/contact` |
+| Quyền riêng tư | `/privacy` |
 | RSS | `/rss.xml` |
-| 404 | fallback |
+| EmDash Admin | `/_emdash/admin` |
 
-## Screenshots
+## Phát triển local
 
-| | Desktop | Mobile |
-|---|---|---|
-| Light | ![work light desktop](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/portfolio/latest/work-light-desktop.jpg) | ![work light mobile](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/portfolio/latest/work-light-mobile.jpg) |
-| Dark | ![work dark desktop](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/portfolio/latest/work-dark-desktop.jpg) | ![work dark mobile](https://raw.githubusercontent.com/emdash-cms/emdash/main/assets/templates/portfolio/latest/work-dark-mobile.jpg) |
+Yêu cầu: Node.js `22.23.4` (xem `.nvmrc`) và pnpm `11.9.0` (xem `package.json`).
 
-## Infrastructure
-
-- **Runtime:** Cloudflare Workers
-- **Database:** D1
-- **Storage:** R2
-- **Framework:** Astro with `@astrojs/cloudflare`
-
-## Local Development
-
-```bash
-pnpm install
+```powershell
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open http://localhost:4321/_emdash/admin and complete the setup wizard. EmDash runs database migrations and applies the portfolio seed during setup. The site is available at http://localhost:4321.
+Mở `http://localhost:4321/`; Admin local ở `http://localhost:4321/_emdash/admin`. Dữ liệu Wrangler local trong `.wrangler/` tách biệt với production. Không dùng Setup Wizard local để tạo Admin production.
 
-## Deploying
+## Kiểm tra và deploy
 
-```bash
-pnpm wrangler login
-pnpm deploy
+```powershell
+pnpm typecheck
+pnpm build
+pnpm exec wrangler deploy --dry-run --config dist/server/wrangler.json
 ```
 
-The first deployment provisions the named D1 database and R2 bucket from `wrangler.jsonc`. See [Deploy to Cloudflare](https://docs.emdashcms.com/deployment/cloudflare/) for production setup, or use the deploy button above.
+Dry run chỉ build và kiểm tra Worker bundle/config local; nó không deploy hoặc xác minh runtime từ xa. Deploy trực tiếp production bằng:
 
-## See Also
+```powershell
+pnpm exec wrangler deploy --config dist/server/wrangler.json
+```
 
-- [Node.js variant](../portfolio) -- same template using SQLite and local file storage
-- [All templates](../)
-- [EmDash documentation](https://docs.emdashcms.com/)
+Admin đầu tiên phải được tạo trên `https://frorlanceedev.id.vn` bằng passkey thật. Cloudflare Access giới hạn setup ban đầu cho owner. Thực hiện theo [release checklist](docs/RELEASE_CHECKLIST.md) trước khi thay đổi Access gate.
+
+## Tài liệu dự án
+
+- [Kiến trúc](docs/ARCHITECTURE.md)
+- [Cloudflare deployment](docs/CLOUDFLARE_DEPLOYMENT.md)
+- [Security checklist](docs/SECURITY_CHECKLIST.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Phát triển local](docs/LOCAL_DEVELOPMENT.md)
+- [Hướng dẫn CMS](docs/CMS_USER_GUIDE.md)
+- [Content model](docs/CONTENT_MODEL.md)
+- [Báo cáo kiểm thử](docs/TEST_REPORT.md)

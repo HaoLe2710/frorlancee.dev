@@ -1,58 +1,94 @@
-# Triển khai Cloudflare
+# Triển khai production trên Cloudflare
 
-## Trạng thái đã xác minh — 2026-11-13
+Ngày ghi nhận: **2026-11-13**. Dự án triển khai thẳng production; không tạo staging, không đổi DNS email và không bật `workers.dev` hoặc preview URL.
 
-| Hạng mục | Trạng thái |
+## Trạng thái hiện tại
+
+| Hạng mục | Trạng thái / bằng chứng |
 |---|---|
-| Wrangler authentication | PASS — CLI xác nhận đã đăng nhập và đọc được account. |
-| D1 | BLOCKED — danh sách remote không có `frorlancee-db`; các database khác được giữ nguyên. |
-| R2 | BLOCKED — `wrangler r2 bucket list` trả về Cloudflare code `10042`: cần bật R2 subscription trong Dashboard. Không có bucket R2 nào được xác minh; không thanh toán hoặc bật dịch vụ thay chủ sở hữu. |
-| Worker | BLOCKED — truy vấn deployment của `frorlancee-website` trả `10007`, Worker chưa tồn tại. |
-| `SESSION` KV | Chưa có ID; Astro thêm binding này vào generated config. |
-| Domain | BLOCKED — `frorlanceedev.id.vn` chưa có bản ghi A/AAAA/CNAME trả về khi kiểm tra; project chưa khai báo route/custom domain. Chưa xác minh domain thuộc account. |
-| Encryption key | Tên `EMDASH_ENCRYPTION_KEY` có trong `.env` local bị ignore; không có Worker remote để kiểm tra/deploy secret. Giá trị không được đọc hoặc ghi vào docs. |
-| Build dry run | PASS — `wrangler deploy --dry-run --config dist/server/wrangler.json` bundle thành công (20,400.75 KiB upload estimate, 5,458.79 KiB gzip estimate). Đây không phải deployment hoặc runtime check. |
+| Wrangler account và zone | PASS — `wrangler whoami` xác nhận account hiện dùng; API Cloudflare trả đúng một zone `frorlanceedev.id.vn`, trạng thái `active`, cùng account ID. |
+| Cloudflare Access | PASS — Dashboard có app `Frorlancee Dev - Initial Setup`, hostname gốc `frorlanceedev.id.vn`, không giới hạn path. App chỉ gắn policy `Frorlancee Owner Only` (Allow, một Include Email rule); không có policy Bypass gắn vào app. Email không được lưu trong tài liệu. |
+| D1 | Đã tạo `frorlancee-db`, ID `ef7bb509-01a5-43ed-a39d-23afb2348f94`; `read_replication.mode=disabled` (không bật replica hoặc nâng cấp dịch vụ). |
+| R2 | Đã tạo bucket private `frorlancee-media`, storage class Standard. Chưa bật public bucket domain. |
+| KV phiên Astro | Đã tạo namespace `SESSION`, ID `09eb75a300c849e79788e9718b4fc9f6`. |
+| Worker / Custom Domain | Chưa triển khai tại thời điểm ghi nhận này. Wrangler sẽ gắn Worker `frorlancee-website` vào Custom Domain trong lần deploy production đầu tiên. |
+| Secret production | Đã sinh key production riêng; chưa cài vào Worker. Bản recovery local được DPAPI bảo vệ trong `.wrangler/secrets/emdash-production-key.dpapi` (ignored, gắn với Windows user/máy hiện tại); owner cần lưu thêm bản độc lập trong password/secret manager trước khi lưu plugin credentials. Key local trong `.env` không dùng chung cho production. |
+| GitHub Workers Builds | Chưa kết nối. Mục dưới đây ghi cấu hình yêu cầu cho `main`, tắt preview builds. |
 
-Không deploy staging/production khi R2 chưa enabled, resource IDs chưa provisioned, và chưa có người sở hữu sẵn sàng claim Admin. Existing D1 databases/Workers không được dùng lại.
+Không deploy nếu Access app/policy thay đổi, hostname bị bỏ khỏi app, hoặc policy xuất hiện Bypass. Owner hoàn tất Setup Wizard và đăng ký passkey thật trên domain sau khi Worker, HTTPS, Access và secret đã sẵn sàng.
 
-## Kích hoạt R2
+## Binding và hostname
 
-Chủ tài khoản mở Cloudflare Dashboard → **Storage & databases → R2 → Overview** và hoàn tất subscription nếu muốn tiếp tục. CLI báo R2 chưa enabled; không có bucket `frorlancee-media` được tạo. Cloudflare nêu R2 có free monthly usage nhưng usage có thể được tính phí. Không chia sẻ Access Key/Secret Key; Wrangler dùng OAuth trực tiếp cho các thao tác R2.
+`wrangler.jsonc` là cấu hình gốc cho production:
 
-Sau khi chủ tài khoản bật R2:
+- Worker: `frorlancee-website`
+- Custom Domain: `frorlanceedev.id.vn` với `custom_domain: true`
+- `workers_dev: false`
+- `preview_urls: false`
+- Runtime variable: `EMDASH_SITE_URL=https://frorlanceedev.id.vn`
+- D1 binding `DB` → `frorlancee-db`
+- R2 binding `MEDIA` → `frorlancee-media`
+- Astro server session binding `SESSION` → namespace ID ở trên
+- Astro adapter sinh binding `IMAGES` và `ASSETS` trong config tại `dist/server/wrangler.json`.
+- Cron hiện có `* * * * *`; handler được khai báo trong `src/worker.ts` để xử lý scheduled publishing.
 
-1. Chạy `pnpm exec wrangler r2 bucket list` để xác nhận dịch vụ đã hoạt động.
-2. Tạo bucket staging riêng `frorlancee-staging-media` rồi ghi nhận tên/region; không dùng bucket của project khác.
-3. Xác minh tên bucket và binding `MEDIA` khớp config staging.
-4. Dùng Admin để upload file thử trên staging, kiểm tra alt text, render qua `Image`, và xóa file thử sau khi xác minh.
+`SESSION` là KV namespace mà Astro Cloudflare adapter dùng cho server sessions. `session: "auto"` trong `d1({ binding: "DB", ... })` là D1 bookmark session riêng, không phải KV namespace. D1 hiện không có replica; tài liệu EmDash hiện tại cho biết khi không có replica, query vẫn chạy trên primary gần nhất kể cả khi dùng `session: "auto"`. Vì vậy không bật replication ở lần triển khai này.
 
-Hướng dẫn chính thức: [Cloudflare R2 Get started](https://developers.cloudflare.com/r2/get-started/) và [EmDash storage](https://docs.emdashcms.com/deployment/storage/).
+Workers Custom Domain cần zone đang Active trong cùng Cloudflare account. Khi Wrangler triển khai Custom Domain, Cloudflare gắn hostname vào Worker và quản lý DNS record/certificate cần thiết. Không tạo record thủ công trùng lặp và không sửa MX/TXT email.
 
-## Tạo staging độc lập
+## Kiểm tra và deploy production
 
-Sau khi xác nhận account, R2, và người chịu trách nhiệm claim setup:
+Chạy từ root repository với Node.js `22.23.4` và pnpm `11.9.0`:
 
-1. Dùng tên mới cho Worker (`frorlancee-website-staging`), D1 (`frorlancee-staging-db`), R2 (`frorlancee-staging-media`), và KV namespace phiên. Không trỏ staging về database/media của site khác.
-2. Provision bindings và ghi IDs vào môi trường `staging`; environments của Wrangler không tự kế thừa toàn bộ bindings. Xác nhận generated `dist/server/wrangler.json` hoặc `.wrangler/deploy/config.json` trỏ tới đúng resource IDs.
-3. Đặt `EMDASH_ENCRYPTION_KEY` qua Worker secret command; nếu dùng EmDash Cloudflare Access, cấu hình provider và secret `CF_ACCESS_AUDIENCE` theo [EmDash Cloudflare guide](https://docs.emdashcms.com/deployment/cloudflare/). Không ghi key vào `wrangler.jsonc`.
-4. Set `EMDASH_SITE_URL` bằng hostname staging trước khi tạo passkey.
-5. Cài dependencies, chạy type check/build, rồi dry-run config đã merge:
+```powershell
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm build
+pnpm exec wrangler deploy --dry-run --config dist/server/wrangler.json
+pnpm exec wrangler deploy --config dist/server/wrangler.json
+```
 
-   ```powershell
-   pnpm install --frozen-lockfile
-   pnpm typecheck
-   pnpm build
-   pnpm exec wrangler deploy --dry-run --config dist/server/wrangler.json
-   ```
+Dry run chỉ xác nhận bundle/config ở local; nó không tạo deployment hoặc kiểm tra Worker runtime. Sau deploy, cài encryption key bằng Cloudflare Worker secret, không thêm vào Wrangler variables hoặc Git:
 
-6. Chỉ khi dry-run, binding IDs, Admin access plan, và người chủ sở hữu đều sẵn sàng, triển khai staging bằng `pnpm exec wrangler deploy --config dist/server/wrangler.json`.
-7. Chủ sở hữu hoàn tất Setup Wizard ngay trên staging hostname bằng passkey thật; không để Worker public ở trạng thái wizard chưa claim. Nếu dùng Access, kiểm tra Access policy bảo vệ `/_emdash` và API Admin, và kiểm tra phản hồi JWT/runtime theo docs.
-8. Chạy CRUD, preview/publish/unpublish, homepage/service/contact settings, và media upload qua Admin UI. Chạy lại Playwright smoke trên staging; lưu report tách riêng.
+```powershell
+pnpm exec wrangler secret put EMDASH_ENCRYPTION_KEY --config dist/server/wrangler.json
+```
 
-## Production và domain
+Dùng một production key riêng, đúng định dạng EmDash `emdash_enc_v1_` + 43 ký tự base64url. Bảo quản bản khôi phục trong password manager/secret manager của owner. Không in key ra terminal log, CI log, README hoặc chat. Xác nhận chỉ tên secret xuất hiện:
 
-Chưa có bằng chứng domain thuộc account này. Trước khi nối `frorlanceedev.id.vn`, owner xác nhận ownership/DNS zone, chọn hostname xác thực, cấu hình domain/Worker route, TLS, redirects, and `EMDASH_SITE_URL`, rồi kiểm tra DNS/HTTP/TLS. Không thêm domain route trước khi quyền quản lý được xác nhận.
+```powershell
+pnpm exec wrangler secret list --config dist/server/wrangler.json
+```
 
-Production gate: staging CRUD/media PASS; owner-run first Admin setup plan đã diễn tập; wizard không bị public trước khi owner claim; bindings/secrets verified; backup and restore rehearsal complete; domain ownership/DNS/TLS verified; release/rollback artifact recorded. Chỉ sau các bước đó thực hiện `wrangler deploy` production.
+## Kiểm tra sau deploy
 
-Tham khảo [EmDash Cloudflare deployment](https://docs.emdashcms.com/deployment/cloudflare/) và [Cloudflare Workers EmDash guide](https://developers.cloudflare.com/workers/framework-guides/web-apps/emdash/).
+1. `wrangler deployments list --name frorlancee-website` cho thấy deployment mới.
+2. Dashboard Worker Domains/Routes cho thấy duy nhất Custom Domain `frorlanceedev.id.vn`; không có `workers.dev` route.
+3. Kiểm tra TLS/HTTPS và DNS của hostname.
+4. Kiểm tra remote Worker settings/bindings: D1 `DB`, R2 `MEDIA`, KV `SESSION`, Astro `IMAGES`/`ASSETS`; không chỉ dựa vào `wrangler.jsonc`.
+5. Gửi request chưa đăng nhập đến `/` và `/_emdash/admin/setup`. Cloudflare Access phải từ chối hoặc chuyển sang Access login; không được trả về EmDash Setup Wizard trước xác thực. Ghi nhận status/headers, không lưu Access cookie.
+6. Chỉ owner đi qua Access bằng email được policy cho phép, sau đó tạo Admin/passkey trên hostname production.
+
+Nếu domain/TLS chưa sẵn sàng, binding sai, request ẩn danh tới được EmDash, hoặc Access policy không đúng, dừng và sửa trước khi owner chạy Setup Wizard.
+
+## GitHub Workers Builds
+
+Sau khi production Worker tồn tại, kết nối repository `HaoLe2710/frorlancee.dev` trong Worker → **Settings → Builds**:
+
+- Production branch: `main`
+- Root directory: repository root
+- Install command: `pnpm install --frozen-lockfile`
+- Build command: `pnpm typecheck && pnpm build`
+- Deploy command: `pnpm exec wrangler deploy --config dist/server/wrangler.json`
+- Preview builds: **disabled** (`previews_enabled: false`); không tạo Preview deployment/URL.
+
+Sau kết nối, đọc lại Build settings và xác nhận GitHub repository, branch, commands và preview state. Chỉ push `main` sau khi review diff/checks vì commit production sẽ tự deploy. Không bật GitHub PR previews.
+
+## Tham khảo
+
+- [EmDash trên Cloudflare](https://docs.emdashcms.com/deployment/cloudflare/)
+- [EmDash quản lý secrets](https://docs.emdashcms.com/deployment/secrets/)
+- [EmDash database and read replication](https://docs.emdashcms.com/deployment/database/)
+- [Cloudflare Worker Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+- [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/)
+- [Workers Builds branch controls](https://developers.cloudflare.com/workers/ci-cd/builds/build-branches/)

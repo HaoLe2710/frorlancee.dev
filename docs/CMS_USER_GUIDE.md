@@ -52,6 +52,6 @@ Mở **Media** trong Admin, tải ảnh lên, điền alt text mô tả nội du
 - D1: ghi nhận recovery point/Time Travel bookmark trước migration; duy trì bản SQL offsite nếu cần lưu lâu hơn hoặc diễn tập khôi phục.
 - R2: sao lưu object độc lập với D1; database backup không chứa bytes của ảnh.
 - Lưu khóa `EMDASH_ENCRYPTION_KEY` trong secret manager riêng, đi cùng phiên bản ứng dụng/database/media.
-- Khôi phục vào resource/database trống và kiểm tra trên staging trước khi đổi binding production. Không import dump vào database đang chạy.
+- Khôi phục vào resource/database trống và kiểm tra trong môi trường phục hồi cô lập trước khi đổi binding production. Không import dump vào database đang chạy.
 
 Xem hướng dẫn [Backups and recovery](https://docs.emdashcms.com/guides/backups/). JSON backup của EmDash dùng để kiểm tra/chuyển dữ liệu; tài liệu hiện tại ghi rõ nó không phải định dạng restore của Admin.

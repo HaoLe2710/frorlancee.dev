@@ -11,7 +11,7 @@ Browser
       ├─ EmDash Admin / API (/_emdash/*)
       ├─ D1 binding DB       → schema, entries, users, settings
       ├─ R2 binding MEDIA    → media files
-      ├─ KV binding SESSION  → session state (added to generated Worker config)
+      ├─ KV binding SESSION  → Astro server session state
       ├─ Images binding      → Cloudflare image transformations
       └─ ASSETS binding      → built client assets
 ```
@@ -29,9 +29,9 @@ Browser
 
 ## Cloudflare bindings
 
-`wrangler.jsonc` names the app `frorlancee-website`, the D1 database `frorlancee-db`, and the R2 bucket `frorlancee-media`. Resource IDs are not yet present. Astro's generated `dist/server/wrangler.json` adds `ASSETS`, `IMAGES`, and `SESSION`; the generated `SESSION` namespace also has no provisioned ID in the current account.
+`wrangler.jsonc` declares Worker `frorlancee-website`, the custom domain `frorlanceedev.id.vn`, `EMDASH_SITE_URL`, and `workers_dev: false` / `preview_urls: false`. Production bindings are D1 `DB` → `frorlancee-db` (`ef7bb509-01a5-43ed-a39d-23afb2348f94`), R2 `MEDIA` → private bucket `frorlancee-media`, and Astro session KV `SESSION` (`09eb75a300c849e79788e9718b4fc9f6`). Astro's generated `dist/server/wrangler.json` adds `IMAGES` and `ASSETS`.
 
-The configuration is a binding contract, not proof that remote resources exist. As of 2026-11-13, no Worker named `frorlancee-website` or D1 database named `frorlancee-db` was found, R2 bucket listing is unavailable because R2 is not enabled, and the requested hostname is not configured in this project. See [Cloudflare deployment](CLOUDFLARE_DEPLOYMENT.md).
+The Wrangler option `session: "auto"` in the EmDash D1 adapter configures D1 bookmark consistency; it is distinct from Astro's KV `SESSION` binding. D1 `read_replication.mode` remains `disabled`; current EmDash documentation states requests use the nearby primary when replicas are disabled, so this release does not enable replicas. Cloudflare Access currently protects the root hostname for first Admin setup. See [Cloudflare deployment](CLOUDFLARE_DEPLOYMENT.md) for live provisioning and deployment status.
 
 ## Local versus deployed data
 

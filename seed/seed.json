@@ -272,6 +272,7 @@
           "contact_cta_description": "Hãy chia sẻ nhu cầu của bạn để cùng tìm ra giải pháp phù hợp.",
           "default_seo_title": "Frorlancee Dev | Phát triển giải pháp số theo yêu cầu",
           "default_seo_description": "Frorlancee Dev chuyên phát triển Website, Mobile App, phần mềm quản lý và các giải pháp tự động hóa theo nhu cầu thực tế.",
+          "canonical_base_url": "https://frorlanceedev.id.vn",
           "footer_note": "Tập trung vào đúng bài toán. Xây dựng giải pháp phù hợp.",
           "show_services": true,
           "show_projects": true,

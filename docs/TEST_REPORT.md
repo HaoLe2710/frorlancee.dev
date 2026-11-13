@@ -1,46 +1,33 @@
-# Báo cáo kiểm thử
+# Báo cáo kiểm thử và release
 
-Ngày kiểm tra: **2026-11-13**. Local verification dùng Node.js 22.23.4, Playwright 1.64.1 và managed Chromium 156.0.8078.4. Không có deployment production/staging.
+Ngày: **2026-11-13**. Báo cáo phân biệt kiểm tra local với bằng chứng Cloudflare production.
 
-## Kết quả
+## Production preflight hiện tại
 
-| Hạng mục | Kết quả | Evidence / giới hạn |
+| Hạng mục | Kết quả | Bằng chứng / giới hạn |
 |---|---|---|
-| Visual QA | **PASS** | 18/18 tổ hợp route/viewport qua `docs/qa/visual-report-preview.json`. |
-| Responsive | **PASS** | 390×844, 768×1024, 1440×900; không horizontal overflow; nav/mobile breakpoint và CTA hiện đúng. |
-| Mobile navigation | **PASS** | Mở bằng click, đóng bằng Escape, đóng sau khi chọn link. |
-| Images | **PASS — vacuous** | Không có image trong CMS seed; không tìm thấy ảnh hỏng, nhưng chưa kiểm thử ảnh media thật. |
-| Browser errors/network | **PASS** | Không có console/page errors, failed requests, hoặc HTTP >=400 trên 18 public route runs. |
-| Public JavaScript | **PASS** | Production preview không yêu cầu script trên 6 public routes. Admin/setup route tải EmDash assets lớn; chúng không được public pages yêu cầu. |
-| Admin Setup | **BLOCKED** | `/_emdash/admin` trả 200 và đến `/_emdash/admin/setup`; wizard hiển thị, nhưng owner chưa tạo account/passkey. Không dùng auth bypass. |
-| Admin CRUD / settings | **BLOCKED** | Chưa có đăng nhập chủ sở hữu; chưa tạo/edit/publish/unpublish post/project hoặc chỉnh homepage/service/contact bằng Admin UI. |
-| Media upload / R2 | **BLOCKED** | R2 CLI trả code 10042; không có upload test và không có R2 remote bucket. |
-| Type check | **PASS — direct CLI** | Astro check dùng Node.js 22.23.4: 30 files, 0 errors, 0 warnings, 0 hints. Lệnh `pnpm typecheck` hiện dùng nhầm Node 22.18 trong PATH và bị Astro từ chối; xem giới hạn bên dưới. |
-| Production build | **PASS** | `pnpm build` succeeds. Warning remains for large Admin/client chunks; see performance section. |
-| Wrangler dry run | **PASS** | `wrangler deploy --dry-run --config dist/server/wrangler.json` builds bundle; it does not create bindings or deploy. |
-| Cloudflare deployment | **BLOCKED** | Worker does not exist; D1/R2/SESSION IDs and production secret are not provisioned. |
-| Domain | **BLOCKED** | No usable DNS answer or Worker custom-domain route verified for `frorlanceedev.id.vn`. |
-| Documentation | **PASS** | All nine requested files are present in `docs/`. |
+| Wrangler account và domain zone | **PASS** | Cloudflare API trả zone `frorlanceedev.id.vn` trạng thái `active`; account ID khớp account của Wrangler. |
+| Cloudflare Access | **PASS — cấu hình** | Dashboard xác nhận app trên hostname root, policy duy nhất `Frorlancee Owner Only`, action Allow, một Include Email rule cho owner. Không có Bypass policy gắn vào app. Chưa có Worker request để kiểm tra chặn tại runtime. |
+| Production bindings | **PASS — đã provision** | D1 `frorlancee-db` ID `ef7bb509-01a5-43ed-a39d-23afb2348f94`; R2 private bucket `frorlancee-media`; KV `SESSION` ID `09eb75a300c849e79788e9718b4fc9f6`. |
+| Astro/EmDash config | **PASS** | Generated Wrangler config có Custom Domain, `workers_dev=false`, `preview_urls=false`, `EMDASH_SITE_URL`, D1/R2/KV, `IMAGES`, `ASSETS`. |
+| `pnpm typecheck` | **PASS** | Node.js 22.23.4 x64, pnpm 11.9.0; Astro check: 30 files, 0 errors, 0 warnings, 0 hints. |
+| `pnpm build` | **PASS** | Astro server build hoàn tất. Có warning chunk >500 kB thuộc nhóm client/admin assets; không chặn build. |
+| Wrangler production dry run | **PASS** | `wrangler 4.160.1 deploy --dry-run --config dist/server/wrangler.json`; bundle 20,401.69 KiB (5,460.43 KiB gzip). Output liệt kê D1 `DB`, R2 `MEDIA`, KV `SESSION`, `IMAGES`, `ASSETS`, và URL production. Dry run không deploy. |
+| Production encryption key | **TẠO — CHƯA UPLOAD** | Production key riêng đã sinh, định dạng được kiểm tra và bản local được DPAPI bảo vệ tại `.wrangler/secrets/emdash-production-key.dpapi` (ignored, gắn với Windows user/máy hiện tại). Chưa có Worker để nhận secret. Owner cần lưu thêm bản khôi phục độc lập trong password/secret manager trước khi lưu plugin credentials. |
+| Production deployment / DNS / HTTPS | **CHƯA KIỂM TRA** | Chưa chạy `wrangler deploy`; Custom Domain, certificate và runtime chưa được xác minh. |
+| Anonymous Access runtime check | **CHƯA KIỂM TRA** | Cần kiểm tra `/` và `/_emdash/admin/setup` sau khi route được tạo. |
+| First Admin / passkey / CMS CRUD | **CHỜ OWNER** | Owner phải hoàn tất Setup Wizard và tạo passkey thật trên domain production trước khi CMS flows có thể kiểm thử. |
+| GitHub Workers Builds | **CHƯA KẾT NỐI** | Yêu cầu branch `main`, preview builds disabled. |
 
-## Visual evidence
+## Local QA đã có từ lần kiểm tra trước
 
-The production-preview report covers Home, Services, Projects, Blog, About, and Contact at all three target sizes. Screenshots are full-page PNGs under `docs/qa/screenshots/`; see [QA README](qa/README.md). The seeded empty states for projects/blog/contact were confirmed as readable and intentional.
+Tài liệu QA hiện có ghi nhận 18/18 tổ hợp route/viewport, không có lỗi browser/network trên sáu public routes, và không tải Admin JavaScript trên public pages. Ảnh nằm trong `docs/qa/`; lần kiểm tra này không chạy lại visual QA hoặc browser smoke.
 
-## Bundle analysis
+## Còn cần xác minh sau deploy
 
-`astro build` still emits the existing large-client-chunk warning. The largest files are EmDash/admin-facing client assets: `lib.DdRd4j3x.js` (~5.46 MiB), `PluginRegistry.BlfIfMvW.js` (~3.43 MiB), and a code editor chunk (~0.45 MiB). The installed `@emdash-cms/admin` package source map contains 329 modules; 324 map to that Admin package (about 3.45 MiB of unminified source content), with the Portable Text and content editor modules among the largest. This identifies the Admin package as the primary source category, not a byte-exact breakdown of Astro's generated chunks: deployment source maps are not emitted. The production preview browser requested the Admin chunks from `/_emdash/admin/setup`; the six public page routes requested no scripts. There is no client React hydration in public templates. The warning is therefore scoped to the Admin experience; no EmDash internals were modified or split.
-
-## Local smoke coverage
-
-- All six public pages returned HTTP 200 at three viewports.
-- Earlier local HTTP smoke also confirmed `/rss.xml` and the expected redirect from legacy `/work`, plus the site 404 for a missing detail route.
-- The preview server rendered the public homepage from local D1 emulation. This is not evidence of remote D1, R2, Cloudflare runtime, DNS, or production behavior.
-- Public images remain unverified because the seed contains no media records.
-
-## Git state
-
-`git status --short --branch` cannot run: `D:\SideProject\frorlancee-dev` is not a Git repository. Therefore this report cannot identify a clean/dirty worktree or a source commit to use for rollback.
-
-## Environment caveat
-
-`pnpm` hiện trên máy này khởi chạy Node 22.18 dù runtime 22.23.4 đã có sẵn. Astro yêu cầu ít nhất 22.23.4. Khi chạy lệnh package, đặt đúng Node version ở đầu `PATH`; type check/build đã được xác minh bằng Astro CLI chạy dưới runtime tương thích. Không hạ `engines` để che khác biệt runtime.
+- Worker deployment và bindings đang hoạt động trên Cloudflare.
+- DNS/TLS/HTTPS cho `frorlanceedev.id.vn`.
+- Access chặn request ẩn danh trước Setup Wizard.
+- Owner sign-in/passkey, post/project CRUD, Site Settings, và R2 media upload.
+- GitHub Workers Builds production branch `main`, với preview builds tắt.
+- Public release chỉ sau khi Admin/CMS checks pass.
